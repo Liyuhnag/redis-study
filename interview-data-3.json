@@ -1,0 +1,37 @@
+{
+  "12": {"questions": [
+    {"q": "Set和Sorted Set在统计场景中各适合什么类型的统计？", "a": "<b>Set</b>：去重统计（UV用SADD+SCARD）、集合运算（共同关注SINTER、推荐好友SDIFF）。<b>Sorted Set</b>：排行榜（按分数排序）、范围统计（ZCOUNT）、滑动窗口（时间戳作score）。选择依据：需要排序→Sorted Set，只需去重→Set。"},
+    {"q": "HyperLogLog是什么？适合什么场景？", "a": "概率数据结构用于基数统计，固定占用<b>12KB</b>内存，无论统计多少元素。优点：极低内存。缺点：有0.81%标准误差、不能获取具体元素、不支持删除。适合：大规模UV统计、不要求精确数值的去重计数、内存敏感场景（Set做UV需数GB，HyperLogLog只需12KB）。"},
+    {"q": "Bitmap适合解决什么问题？如何实现签到统计？", "a": "Bitmap本质是String的位数组，用SETBIT/GETBIT操作单个位。适合：签到统计、用户在线状态、布尔属性统计。签到实现：SETBIT sign:uid:202403 {day} 1，BITCOUNT统计月签到天数。1亿用户日活统计仅12MB，远小于Set。"},
+    {"q": "Set集合运算在大数据量下有什么性能问题？", "a": "时间复杂度O(N*M)，数据量大时耗时长，单线程阻塞所有请求，结果集可能很大。优化：在从库执行、用SINTERSTORE存结果分批读取、拉到客户端计算、定时预计算缓存结果、按维度拆分控制集合大小。"},
+    {"q": "如何高效统计1亿用户中7天连续签到的用户？", "a": "方案：每天一个Bitmap（sign:20240301），签到时SETBIT设1。统计：BITOP AND result sign:20240301 ... sign:20240307，BITCOUNT result得结果。内存：7天×12MB+结果12MB≈96MB，Set方案需5.6GB。Bitmap仅为Set的1.7%。注意用户ID不连续时可能有空位浪费。"}
+  ]},
+  "13": {"questions": [
+    {"q": "Redis GEO底层用什么数据结构？为什么？", "a": "底层使用<b>Sorted Set</b>：经纬度通过GeoHash算法编码为52位整数作为score，位置名称作为member。选择Sorted Set因为GeoHash将二维映射为一维且保持空间邻近性，Sorted Set的范围查询能力（ZRANGEBYSCORE）天然适合地理位置搜索。"},
+    {"q": "GeoHash算法的原理和局限性是什么？", "a": "原理：递归二分经纬度范围，左半区间记0右半区间记1，交替组合成整数，位数越多精度越高，编码相近的值地理位置也相近。局限性：<b>边界问题</b>（近距离点可能编码差异大）、精度与性能权衡、经度±180°附近编码突变。Redis通过搜索周围8个网格解决边界问题。"},
+    {"q": "GEORADIUS命令有什么性能隐患？如何优化？", "a": "需遍历范围内所有元素并计算距离，千万级数据大半径查询耗时长。优化：按城市/区域分key减少单key元素数；用COUNT限制返回数量；控制查询半径；Redis 6.2+用GEOSEARCH替代；在从库查询避免阻塞主库。"},
+    {"q": "Redis如何通过Module机制支持自定义数据类型？", "a": "Redis 4.0+的Module机制：用C语言编写模块，实现RedisModule_CreateDataType注册新类型，需实现rdb_save/rdb_load（持久化）、aof_rewrite（AOF重写）、free（内存释放）等回调。典型案例：RedisJSON、RedisTimeSeries、RedisGraph、RedisBloom。"},
+    {"q": "GEO相比直接用Sorted Set存经纬度有什么优势？", "a": "直接用Sorted Set只能按一个维度排序，无法同时基于经纬度范围查询。GEO优势：GeoHash二维→一维映射保持空间邻近性；内置GEODIST距离计算；GEORADIUS高效范围查询O(logN+M)；自动检查相邻网格减少边界遗漏；GEOADD/GEOPOS等标准化接口简单易用。"}
+  ]},
+  "14": {"questions": [
+    {"q": "Redis保存时间序列数据有哪些方案？", "a": "<b>Sorted Set</b>（score=时间戳）：支持范围查询但不支持聚合、member不允许重复。<b>Hash+Sorted Set组合</b>：数据更丰富但维护复杂。<b>RedisTimeSeries模块</b>：专为时间序列设计，内置聚合、自动过期、降采样、标签索引。大规模推荐RedisTimeSeries。"},
+    {"q": "RedisTimeSeries有哪些核心功能？", "a": "TS.ADD添加数据点；TS.RANGE时间范围查询；内置聚合计算（AVG/SUM/MIN/MAX/COUNT）；<b>降采样</b>自动压缩高精度为低精度数据；<b>RETENTION</b>设置数据保留时间自动过期；<b>Labels标签</b>支持多维过滤查询。优势：聚合在服务端完成避免大量数据传输。"},
+    {"q": "Sorted Set存时间序列如何解决member不能重复的问题？", "a": "方案：member中拼接唯一标识如\"timestamp:temperature:25.3\"；包含序列号\"value_ts_seqno\"；使用<b>Redis Stream</b>（5.0+）自动生成唯一ID天然支持时间序列；Hash编码将完整数据JSON作为member。推荐Redis Stream（XADD/XRANGE）。"},
+    {"q": "时间序列数据量持续增长如何管理过期和内存？", "a": "策略：<b>按时间分Key</b>（每天一个key设EXPIRE）；<b>定期清理</b>（ZREMRANGEBYSCORE删除旧数据）；<b>RedisTimeSeries RETENTION</b>自动过期；<b>降采样存储</b>（近期高精度，历史低精度如每小时平均值），大幅减少内存占用。"},
+    {"q": "Redis Stream和Sorted Set在时间序列场景如何选择？", "a": "<b>Stream</b>：自动有序唯一ID、XRANGE高效范围查询、支持消费者组实时处理、MAXLEN自动裁剪，适合简单时间序列记录。<b>Sorted Set</b>：成熟但member需唯一、不支持聚合。选择：记录和查询→Stream；排序排名→Sorted Set；聚合降采样→RedisTimeSeries。"}
+  ]},
+  "15": {"questions": [
+    {"q": "Redis实现消息队列有哪些方案？各自优缺点？", "a": "<b>List</b>：简单BRPOP阻塞读，但无消费者组和确认机制。<b>Pub/Sub</b>：多消费者实时推送，但消息不持久化离线会丢失。<b>Stream</b>（推荐）：持久化、消费者组、消息确认ACK、消息回溯。<b>Sorted Set</b>：可实现延迟队列但非专用队列实现。"},
+    {"q": "Stream消费者组如何工作？解决了什么问题？", "a": "XGROUP CREATE创建组关联Stream；XREADGROUP读取消息；组内消息<b>只被一个消费者处理</b>（负载均衡），不同组独立消费所有消息（广播）。解决：多消费者并行处理、XACK消息确认、XCLAIM故障消费者消息转移、消息回溯重新消费。"},
+    {"q": "Redis消息队列与Kafka/RabbitMQ有什么差距？", "a": "差距：<b>可靠性</b>Redis基于内存有丢失风险，Kafka多副本保证。<b>堆积能力</b>Redis受内存限制，Kafka用磁盘可堆积TB级。<b>吞吐量</b>Redis约10万QPS，Kafka百万级。<b>功能</b>缺少死信队列、延迟消息等。适合：轻量级、低延迟、消息量不大的场景。"},
+    {"q": "如何用Redis实现延迟队列？", "a": "用<b>Sorted Set</b>：score为执行时间戳，member为消息。消费者用ZRANGEBYSCORE 0 {当前时间戳} LIMIT 0 1获取到期消息，ZREM删除并处理。多消费者时需<b>Lua脚本</b>保证ZRANGEBYSCORE和ZREM原子性避免重复消费。"},
+    {"q": "XREAD和XREADGROUP有什么区别？", "a": "<b>XREAD</b>：独立消费者直接读Stream，需自行维护消费位置，多消费者读到<b>相同消息</b>（广播），适合消息订阅。<b>XREADGROUP</b>：通过消费者组读取，组内消息<b>只被一个消费者处理</b>，支持ACK和pending列表，适合任务分发。类比Kafka的独立消费者vs消费者组。"}
+  ]},
+  "16": {"questions": [
+    {"q": "Redis中哪些操作可能导致主线程阻塞？", "a": "<b>客户端相关</b>：复杂命令（KEYS *、大集合HGETALL）、大key删除、大量key集中过期。<b>磁盘IO</b>：AOF fsync同步写盘、AOF重写/RDB的fork操作。<b>主从同步</b>：全量同步的fork和RDB生成。<b>集群</b>：槽迁移时大key移动。"},
+    {"q": "Redis异步机制包括哪些？分别处理什么操作？", "a": "Redis通过后台线程处理耗时操作：<b>lazyfree线程</b>：异步删除大key（UNLINK代替DEL）、异步清空数据库（FLUSHALL ASYNC）。<b>AOF线程</b>：Everysec模式每秒异步fsync。<b>close线程</b>：异步关闭文件描述符。关键配置：lazyfree-lazy-expire、lazyfree-lazy-server-del等。"},
+    {"q": "大量key集中过期为什么会导致阻塞？如何避免？", "a": "Redis每100ms主动检查过期key：随机抽取20个设有过期时间的key，删除已过期的，如果过期比例>25%则重复执行直到<25%或超时。大量key同时过期时循环删除会长时间阻塞。避免：给过期时间加<b>随机偏移</b>（如EXPIRE key TTL+random(300)）分散过期时间。"},
+    {"q": "什么场景下应该使用UNLINK替代DEL？", "a": "当删除<b>大key</b>时：大Hash（百万field）、大List（百万元素）、大Set等。DEL在主线程同步释放内存，大key可能阻塞数秒。UNLINK将内存释放交给<b>lazyfree后台线程</b>异步执行，主线程只做key解绑操作O(1)。小key用DEL即可（开销极小）。"},
+    {"q": "fork操作为什么是Redis阻塞的重要来源？如何优化？", "a": "fork需要复制进程页表，大内存实例页表条目多导致fork耗时达秒级，期间主线程完全阻塞。频率：bgsave、bgrewriteaof都需要fork。优化：控制实例内存（建议≤10GB）；避免频繁触发RDB/AOF重写；在从库执行bgsave；使用Huge Pages减少页表条目数量。"}
+  ]}
+}

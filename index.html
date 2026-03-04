@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redis核心技术与实战</title>
+    <link rel="stylesheet" href="./assets/style.css">
+    <style>
+        .home-hero {
+            background: linear-gradient(135deg, #1e293b 0%, #312e81 50%, #1e1b4b 100%);
+            padding: 80px 20px 60px;
+            text-align: center;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .home-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(220,38,38,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(99,102,241,0.1) 0%, transparent 50%);
+            animation: heroFloat 10s ease-in-out infinite alternate;
+        }
+        @keyframes heroFloat {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-20px, 10px); }
+        }
+        .home-hero h1 {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+        .home-hero h1 span {
+            background: linear-gradient(90deg, #f87171, #fb923c, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .home-hero p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .home-hero .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        .home-hero .stat-item {
+            text-align: center;
+        }
+        .home-hero .stat-num {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        .home-hero .stat-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .home-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+        }
+
+        .group-section {
+            margin-bottom: 40px;
+        }
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .group-badge {
+            background: linear-gradient(135deg, #dc2626, #ea580c);
+            color: #fff;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .group-badge.blue { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+        .group-badge.purple { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+        .group-badge.amber { background: linear-gradient(135deg, #d97706, #f59e0b); }
+        .group-badge.emerald { background: linear-gradient(135deg, #059669, #10b981); }
+        .group-badge.slate { background: linear-gradient(135deg, #475569, #64748b); }
+        .group-badge.indigo { background: linear-gradient(135deg, #4338ca, #6366f1); }
+        .group-count {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .chapter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
+        }
+        .chapter-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px 18px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .chapter-card:hover {
+            background: #eef2ff;
+            border-color: #c7d2fe;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .chapter-num {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.82rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .chapter-num.icon {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            font-size: 1rem;
+        }
+        .chapter-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .chapter-info .title {
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 640px) {
+            .home-hero h1 { font-size: 1.8rem; }
+            .home-hero .stats { gap: 20px; }
+            .chapter-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ========== Mind Map ========== */
+        .mindmap-section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 24px 8px;
+        }
+        .mindmap-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .mindmap-title::before {
+            content: '🧠';
+            font-size: 1.3rem;
+        }
+        .mindmap-container {
+            position: relative;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding: 20px 0 30px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mindmap-svg {
+            display: block;
+            margin: 0 auto;
+        }
+        /* Node styling */
+        .mm-node {
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .mm-node:hover {
+            filter: brightness(0.95);
+        }
+        .mm-node rect, .mm-node ellipse {
+            transition: stroke-width 0.2s, filter 0.2s;
+        }
+        .mm-node:hover rect, .mm-node:hover ellipse {
+            stroke-width: 2.5;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12));
+        }
+        .mm-branch {
+            transition: opacity 0.3s;
+        }
+        .mm-line {
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+        /* Tooltip */
+        .mm-tooltip {
+            position: fixed;
+            background: #1e293b;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            max-width: 260px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .mm-tooltip.show { opacity: 1; }
+        .mm-tooltip .tt-title {
+            font-weight: 700;
+            color: #fbbf24;
+            margin-bottom: 4px;
+        }
+        .mm-tooltip .tt-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .mm-tooltip .tt-list li {
+            padding: 1px 0;
+            color: #cbd5e1;
+        }
+        .mm-tooltip .tt-list li::before {
+            content: '•';
+            color: #818cf8;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar-toggle" id="sidebarToggle">☰</div>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="home-hero">
+                <h1><span>Redis核心技术与实战</span></h1>
+                <p>极客时间 · 蒋德钧 — 系统掌握 Redis 核心原理与实战经验</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-num">41</div>
+                        <div class="stat-label">正式课程</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">7</div>
+                        <div class="stat-label">加餐</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">3</div>
+                        <div class="stat-label">测试</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mind Map -->
+            <div class="mindmap-section">
+                <div class="mindmap-title">课程知识体系</div>
+                <div class="mindmap-container" id="mindmapContainer"></div>
+            </div>
+
+            <div class="home-content" id="homeContent"></div>
+        </main>
+    </div>
+
+    <script src="./assets/nav.js"></script>
+    <script>
+        // 分组定义
+        const groupMeta = {
+            '开篇':   { badge: '', icon: '📖' },
+            '基础篇': { badge: 'blue', icon: '' },
+            '实践篇': { badge: 'purple', icon: '' },
+            '缓存篇': { badge: 'amber', icon: '' },
+            '高级篇': { badge: 'emerald', icon: '' },
+            '进阶篇': { badge: 'indigo', icon: '' },
+            '测试':   { badge: 'slate', icon: '📝' },
+            '加餐':   { badge: 'slate', icon: '🎁' },
+            '结束':   { badge: '', icon: '🎓' }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('homeContent');
+            const pagesPath = getPagesPath();
+
+            // 按 group 分组
+            const groups = [];
+            const groupMap = {};
+            chapters.forEach(ch => {
+                if (!groupMap[ch.group]) {
+                    groupMap[ch.group] = [];
+                    groups.push(ch.group);
+                }
+                groupMap[ch.group].push(ch);
+            });
+
+            let html = '';
+            groups.forEach(g => {
+                const meta = groupMeta[g] || { badge: '', icon: '' };
+                const items = groupMap[g];
+                html += `<div class="group-section">`;
+                html += `<div class="group-header">
+                    <span class="group-badge ${meta.badge}">${g}</span>
+                    <span class="group-count">${items.length} 篇</span>
+                </div>`;
+                html += `<div class="chapter-grid">`;
+                items.forEach(ch => {
+                    const numHtml = ch.num
+                        ? `<div class="chapter-num">${ch.num}</div>`
+                        : `<div class="chapter-num icon">${meta.icon || '📄'}</div>`;
+                    html += `<a class="chapter-card" href="${pagesPath}${ch.file}">
+                        ${numHtml}
+                        <div class="chapter-info">
+                            <div class="title">${ch.title}</div>
+                        </div>
+                    </a>`;
+                });
+                html += `</div></div>`;
+            });
+
+            container.innerHTML = html;
+        });
+    </script>
+    <script>
+    // ========== Mind Map Renderer ==========
+    (function() {
+        const tree = {
+            label: 'Redis核心技术\n与实战',
+            color: '#dc2626',
+            children: [
+                {
+                    label: '基础篇',
+                    color: '#2563eb',
+                    desc: '核心架构与集群基石',
+                    children: [
+                        { label: '键值数据库\n基本架构', color: '#3b82f6', items: ['数据结构','IO模型','单线程'] },
+                        { label: '持久化', color: '#3b82f6', items: ['AOF日志','RDB快照'] },
+                        { label: '主从复制\n与高可用', color: '#3b82f6', items: ['数据同步','哨兵机制','哨兵集群'] },
+                        { label: '切片集群', color: '#3b82f6', items: ['数据分片','hash slot'] }
+                    ]
+                },
+                {
+                    label: '实践篇',
+                    color: '#7c3aed',
+                    desc: '数据类型选择与性能调优',
+                    children: [
+                        { label: '数据类型\n应用', color: '#8b5cf6', items: ['String优化','集合统计','GEO','时间序列','消息队列'] },
+                        { label: '性能分析\n与优化', color: '#8b5cf6', items: ['异步机制','CPU亲和','慢查询诊断'] },
+                        { label: '内存管理', color: '#8b5cf6', items: ['内存碎片','缓冲区溢出','延迟优化'] }
+                    ]
+                },
+                {
+                    label: '缓存篇',
+                    color: '#d97706',
+                    desc: '缓存设计模式与异常处理',
+                    children: [
+                        { label: '缓存模式', color: '#f59e0b', items: ['旁路缓存','读写缓存','替换策略'] },
+                        { label: '缓存异常', color: '#f59e0b', items: ['数据不一致','缓存雪崩','缓存击穿','缓存穿透'] },
+                        { label: '缓存污染\n与扩展', color: '#f59e0b', items: ['LFU/LRU','Pika+SSD'] }
+                    ]
+                },
+                {
+                    label: '高级篇',
+                    color: '#059669',
+                    desc: '并发控制、事务与运维实战',
+                    children: [
+                        { label: '并发与事务', color: '#10b981', items: ['原子操作','分布式锁','ACID事务'] },
+                        { label: '运维实战', color: '#10b981', items: ['主从切换坑','脑裂问题'] }
+                    ]
+                },
+                {
+                    label: '进阶篇',
+                    color: '#4338ca',
+                    desc: '集群方案与前沿技术',
+                    children: [
+                        { label: '集群方案', color: '#6366f1', items: ['Codis vs Cluster','数据倾斜','通信开销'] },
+                        { label: '场景与前沿', color: '#6366f1', items: ['秒杀场景','多线程6.0','NVM内存'] }
+                    ]
+                }
+            ]
+        };
+
+        const CFG = {
+            rootRx: 70, rootRy: 36,
+            branchW: 100, branchH: 34, branchR: 10,
+            leafW: 88, leafH: 28, leafR: 8,
+            levelGap: [160, 140, 120],
+            siblingGap: 10,
+            rootFont: 14, branchFont: 12, leafFont: 10.5,
+        };
+
+        function measureBranch(node, depth) {
+            if (!node.children || node.children.length === 0) {
+                const w = depth === 1 ? CFG.branchW : CFG.leafW;
+                const h = depth === 1 ? CFG.branchH : CFG.leafH;
+                node._w = w; node._h = h;
+                node._totalH = h;
+                return;
+            }
+            let totalH = 0;
+            node.children.forEach((c, i) => {
+                measureBranch(c, depth + 1);
+                totalH += c._totalH;
+                if (i > 0) totalH += CFG.siblingGap;
+            });
+            const w = depth === 0 ? 0 : (depth === 1 ? CFG.branchW : CFG.leafW);
+            const h = depth === 0 ? 0 : (depth === 1 ? CFG.branchH : CFG.leafH);
+            node._w = w; node._h = h;
+            node._totalH = Math.max(h, totalH);
+        }
+
+        function layoutBranch(node, cx, cy, depth) {
+            node._cx = cx; node._cy = cy; node._depth = depth;
+            if (!node.children || node.children.length === 0) return;
+            const gap = depth < CFG.levelGap.length ? CFG.levelGap[depth] : 120;
+            const childX = cx + (depth === 0 ? CFG.rootRx + gap : (node._w / 2) + gap);
+            let startY = cy - node._totalH / 2;
+            node.children.forEach(c => {
+                const childCy = startY + c._totalH / 2;
+                layoutBranch(c, childX, childCy, depth + 1);
+                startY += c._totalH + CFG.siblingGap;
+            });
+        }
+
+        function getBounds(node, bounds) {
+            const hw = node._depth === 0 ? CFG.rootRx : node._w / 2;
+            const hh = node._depth === 0 ? CFG.rootRy : node._h / 2;
+            bounds.minX = Math.min(bounds.minX, node._cx - hw);
+            bounds.maxX = Math.max(bounds.maxX, node._cx + hw);
+            bounds.minY = Math.min(bounds.minY, node._cy - hh);
+            bounds.maxY = Math.max(bounds.maxY, node._cy + hh);
+            if (node.children) node.children.forEach(c => getBounds(c, bounds));
+        }
+
+        function curveH(x1, y1, x2, y2) {
+            const mx = (x1 + x2) / 2;
+            return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+        }
+
+        function renderNode(node, svg, lines) {
+            const d = node._depth;
+            if (node.children) {
+                node.children.forEach(child => {
+                    const px = node._cx + (d === 0 ? CFG.rootRx : node._w / 2);
+                    const py = node._cy;
+                    const cw = child._depth === 1 ? child._w / 2 : child._w / 2;
+                    const cx = child._cx - cw;
+                    const cy = child._cy;
+                    lines.push(`<path class="mm-line" d="${curveH(px, py, cx, cy)}" stroke="${child.color || '#94a3b8'}" opacity="0.5"/>`);
+                    renderNode(child, svg, lines);
+                });
+            }
+
+            const g = [];
+            const id = 'mm_' + Math.random().toString(36).slice(2, 8);
+            if (d === 0) {
+                g.push(`<ellipse cx="${node._cx}" cy="${node._cy}" rx="${CFG.rootRx}" ry="${CFG.rootRy}" fill="${node.color}" stroke="#fff" stroke-width="3"/>`);
+                const parts = node.label.split('\n');
+                parts.forEach((t, i) => {
+                    const dy = (i - (parts.length - 1) / 2) * 18;
+                    g.push(`<text x="${node._cx}" y="${node._cy + dy}" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="${CFG.rootFont}" font-weight="800">${t}</text>`);
+                });
+            } else {
+                const w = node._w, h = node._h, r = d === 1 ? CFG.branchR : CFG.leafR;
+                const x = node._cx - w / 2, y = node._cy - h / 2;
+                const fill = d === 1 ? node.color : (node.color + '18');
+                const stroke = node.color;
+                const textColor = d === 1 ? '#fff' : node.color;
+                const fontSize = d === 1 ? CFG.branchFont : CFG.leafFont;
+                const fontWeight = d === 1 ? '700' : '600';
+                g.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`);
+                const parts = node.label.split('\n');
+                parts.forEach((t, i) => {
+                    const dy = (i - (parts.length - 1) / 2) * (fontSize + 2);
+                    g.push(`<text x="${node._cx}" y="${node._cy + dy}" text-anchor="middle" dominant-baseline="central" fill="${textColor}" font-size="${fontSize}" font-weight="${fontWeight}">${t}</text>`);
+                });
+            }
+
+            const dataAttr = [];
+            if (node.desc) dataAttr.push(`data-desc="${node.desc}"`);
+            if (node.items) dataAttr.push(`data-items="${node.items.join('|')}"`);
+            if (node.label) dataAttr.push(`data-label="${node.label.replace(/\n/g, '')}"`);
+            svg.push(`<g class="mm-node" ${dataAttr.join(' ')}>${g.join('')}</g>`);
+        }
+
+        function render() {
+            measureBranch(tree, 0);
+            layoutBranch(tree, 0, 0, 0);
+            const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+            getBounds(tree, bounds);
+            const pad = 30;
+            const vw = bounds.maxX - bounds.minX + pad * 2;
+            const vh = bounds.maxY - bounds.minY + pad * 2;
+            const ox = -bounds.minX + pad;
+            const oy = -bounds.minY + pad;
+
+            // Offset all nodes
+            function offset(n) {
+                n._cx += ox; n._cy += oy;
+                if (n.children) n.children.forEach(offset);
+            }
+            offset(tree);
+
+            const lines = [], nodes = [];
+            renderNode(tree, nodes, lines);
+
+            const container = document.getElementById('mindmapContainer');
+            const displayW = Math.min(vw, 1060);
+            container.innerHTML = `
+                <svg class="mindmap-svg" width="${displayW}" height="${vh * displayW / vw}" viewBox="0 0 ${vw} ${vh}" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+                    ${lines.join('\n')}
+                    ${nodes.join('\n')}
+                </svg>
+                <div class="mm-tooltip" id="mmTooltip"></div>
+            `;
+
+            // Tooltip
+            const tooltip = document.getElementById('mmTooltip');
+            container.querySelectorAll('.mm-node').forEach(el => {
+                el.addEventListener('mouseenter', e => {
+                    const label = el.dataset.label || '';
+                    const desc = el.dataset.desc || '';
+                    const items = el.dataset.items ? el.dataset.items.split('|') : [];
+                    if (!desc && items.length === 0) return;
+                    let html = `<div class="tt-title">${label}</div>`;
+                    if (desc) html += `<div style="color:#e2e8f0;margin-bottom:4px">${desc}</div>`;
+                    if (items.length) {
+                        html += '<ul class="tt-list">' + items.map(i => `<li>${i}</li>`).join('') + '</ul>';
+                    }
+                    tooltip.innerHTML = html;
+                    tooltip.classList.add('show');
+                });
+                el.addEventListener('mousemove', e => {
+                    tooltip.style.left = (e.clientX + 14) + 'px';
+                    tooltip.style.top = (e.clientY + 14) + 'px';
+                });
+                el.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('show');
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', render);
+    })();
+    </script>
+</body>
+</html>

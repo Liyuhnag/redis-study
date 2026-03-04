@@ -1,0 +1,539 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面试补缺 - Redis核心技术与实战</title>
+    <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        .article-content { padding-bottom: 40px; }
+        .article-content .md-h1 { font-size: 1.8rem; color: #1e293b; margin: 32px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+        .article-content .md-h2 { font-size: 1.4rem; color: #1e293b; margin: 28px 0 12px; padding-left: 12px; border-left: 4px solid #dc2626; }
+        .article-content .md-h3 { font-size: 1.15rem; color: #334155; margin: 24px 0 10px; }
+        .article-content p { color: #475569; margin: 10px 0; font-size: 0.95rem; }
+        .article-content ul, .article-content ol { padding-left: 24px; margin: 10px 0; }
+        .article-content li { color: #475569; margin: 4px 0; font-size: 0.93rem; }
+        .article-content img { max-width: 100%; border-radius: 8px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .article-content .md-quote {
+            background: #eef2ff; border-left: 3px solid #6366f1; padding: 12px 16px;
+            border-radius: 0 8px 8px 0; margin: 14px 0; color: #3730a3; font-size: 0.92rem;
+        }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+        .article-content th, .article-content td { border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }
+        .article-content th { background: #f8fafc; font-weight: 600; }
+        .article-content hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+        .article-content a { color: #4338ca; }
+        .article-content a:hover { text-decoration: underline; }
+        .article-content code {
+            background: #f1f5f9; color: #b45309; padding: 2px 6px; border-radius: 4px;
+            font-size: 0.88em; border: 1px solid #e2e8f0;
+        }
+        .article-content pre { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 10px; overflow-x: auto; font-size: 0.88rem; margin: 14px 0; line-height: 1.6; }
+        .article-content pre code { background: transparent; border: none; color: inherit; padding: 0; }
+
+        /* Supplement-specific styles */
+        .topic-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 24px 28px;
+            margin: 20px 0;
+            transition: border-color 0.2s;
+        }
+        .topic-card:hover { border-color: #c7d2fe; }
+        .topic-card h3 {
+            font-size: 1.12rem;
+            color: #1e293b;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .topic-card h3 .badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            vertical-align: middle;
+        }
+        .badge.critical { background: #fee2e2; color: #dc2626; }
+        .badge.important { background: #fef3c7; color: #d97706; }
+        .badge.good { background: #dcfce7; color: #16a34a; }
+        .topic-card .scene {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+        .topic-card h4 {
+            font-size: 0.95rem;
+            color: #475569;
+            margin: 14px 0 8px;
+            font-weight: 700;
+        }
+        .topic-card ul { padding-left: 20px; margin: 6px 0; }
+        .topic-card li { color: #475569; font-size: 0.9rem; margin: 5px 0; line-height: 1.7; }
+        .topic-card li strong { color: #1e293b; }
+
+        .key-point {
+            background: #fffbeb;
+            border: 1px solid #fcd34d;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 12px 0;
+            font-size: 0.9rem;
+            color: #92400e;
+        }
+        .key-point strong { color: #b45309; }
+
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            margin: 12px 0;
+            line-height: 1.6;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .code-block .comment { color: #64748b; }
+        .code-block .keyword { color: #7dd3fc; }
+        .code-block .string { color: #86efac; }
+        .code-block .cmd { color: #fbbf24; }
+
+        .compare-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
+        .compare-table th { background: #f1f5f9; color: #475569; font-weight: 700; padding: 10px 14px; border: 1px solid #e2e8f0; }
+        .compare-table td { padding: 10px 14px; border: 1px solid #e2e8f0; color: #475569; }
+        .compare-table tr:hover { background: #f8fafc; }
+
+        .interview-qa {
+            background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+            border: 1px solid #c7d2fe;
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin: 14px 0;
+        }
+        .interview-qa .q {
+            font-weight: 700;
+            color: #4338ca;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .interview-qa .q::before { content: 'Q: '; }
+        .interview-qa .a { color: #3730a3; font-size: 0.9rem; line-height: 1.8; }
+        .interview-qa .a::before { content: 'A: '; font-weight: 700; }
+
+        .section-intro {
+            color: #64748b;
+            font-size: 0.92rem;
+            margin: -4px 0 16px;
+            line-height: 1.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar-toggle" id="sidebarToggle">☰</div>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="hero">
+                <h1>Java 面试 Redis 查漏补缺</h1>
+                <p class="subtitle">课程未覆盖的高频面试考点</p>
+            </div>
+            <div class="container">
+                <div class="article-content">
+
+<p>本页梳理了学完《Redis核心技术与实战》40讲之后，在 <strong>Java 工程师面试</strong>中仍然可能被问到的 Redis 高频知识点。每个主题都包含<strong>面试问法、核心答案要点和参考回答</strong>，帮你快速查漏补缺。</p>
+
+<hr/>
+
+<!-- ==================== 1. 大 Key ==================== -->
+<h2 class="md-h2">一、大 Key 问题</h2>
+<p class="section-intro">面试频率极高，几乎是中高级 Java 面试必问。课程仅零散提及，缺少系统梳理。</p>
+
+<div class="topic-card">
+<h3>什么是大 Key？有什么危害？ <span class="badge critical">必问</span></h3>
+<p class="scene">面试场景：聊到 Redis 性能优化、线上故障排查时必然引出</p>
+
+<h4>定义标准（业界通用）</h4>
+<ul>
+<li><strong>String 类型</strong>：value 大于 <strong>10KB</strong> 就要注意，超过 <strong>1MB</strong> 就是典型大 Key</li>
+<li><strong>集合类型</strong>（Hash/Set/ZSet/List）：元素数量超过 <strong>5000</strong> 个</li>
+</ul>
+
+<h4>四大危害</h4>
+<ul>
+<li><strong>内存不均</strong>：集群中某个节点内存远超其他节点，数据倾斜</li>
+<li><strong>阻塞主线程</strong>：大 Key 的读写、删除都会耗时长，阻塞其他命令</li>
+<li><strong>网络带宽</strong>：大 value 传输占满带宽，影响同节点其他 Key 的响应</li>
+<li><strong>持久化压力</strong>：AOF 写入耗时长，RDB fork 时 copy-on-write 内存暴增</li>
+</ul>
+
+<h4>如何发现</h4>
+<div class="code-block">
+<span class="comment"># 方法1：官方工具扫描（推荐，不阻塞）</span>
+<span class="cmd">redis-cli --bigkeys -i 0.1</span>
+
+<span class="comment"># 方法2：查看单个 Key 的内存占用（Redis 4.0+）</span>
+<span class="cmd">MEMORY USAGE</span> mykey
+
+<span class="comment"># 方法3：线上监控，通过 slowlog 发现异常命令</span>
+<span class="cmd">SLOWLOG GET</span> 10
+</div>
+
+<h4>如何解决</h4>
+<ul>
+<li><strong>拆分</strong>：大 Hash 按字段前缀拆成多个小 Hash；大 List 按时间范围分段</li>
+<li><strong>异步删除</strong>：使用 <code>UNLINK</code> 代替 <code>DEL</code>（Redis 4.0+），后台线程回收内存</li>
+<li><strong>开启 lazy-free</strong>：配置 <code>lazyfree-lazy-expire yes</code>、<code>lazyfree-lazy-server-del yes</code></li>
+<li><strong>压缩</strong>：String 类型可在客户端用 GZIP/Snappy 压缩后再存入</li>
+</ul>
+
+<div class="interview-qa">
+<div class="q">你们线上有遇到过大 Key 问题吗？怎么处理的？</div>
+<div class="a">我们遇到过一个场景：用户画像用一个大 Hash 存储，字段超过了 2 万个，导致集群某个分片内存倾斜 40%。发现方式是通过 redis-cli --bigkeys 扫描。解决方案是按用户 ID 取模把一个 Hash 拆成 16 个小 Hash，key 格式改为 user:{uid}:{uid%16}，同时启用了 lazyfree 来避免删除旧 Key 时阻塞。</div>
+</div>
+</div>
+
+<!-- ==================== 2. 热 Key ==================== -->
+<h2 class="md-h2">二、热 Key 问题</h2>
+<p class="section-intro">与大 Key 并列的高频考点。课程完全没有系统讲解。</p>
+
+<div class="topic-card">
+<h3>什么是热 Key？怎么解决？ <span class="badge critical">必问</span></h3>
+<p class="scene">面试场景：秒杀、热搜、明星出轨等突发流量场景</p>
+
+<h4>定义</h4>
+<p>某个 Key 的访问频率远超其他 Key（QPS 可能达到数万甚至数十万），导致该 Key 所在的 Redis 节点成为瓶颈。</p>
+
+<h4>发现方式</h4>
+<ul>
+<li><code>redis-cli --hotkeys</code>（需开启 LFU 淘汰策略）</li>
+<li><code>MONITOR</code> 命令（仅在测试环境用，线上会严重降低性能）</li>
+<li>客户端/代理层统计：在 Redisson/Lettuce 中做 Key 访问计数</li>
+<li>业务层预判：秒杀商品 ID、热搜话题 ID 提前可知</li>
+</ul>
+
+<h4>四种解决方案</h4>
+<table class="compare-table">
+<tr><th>方案</th><th>原理</th><th>适用场景</th></tr>
+<tr><td><strong>本地缓存打底</strong></td><td>用 Caffeine/Guava Cache 缓存热 Key，不请求 Redis</td><td>最常用，效果最好</td></tr>
+<tr><td><strong>Key 分散（读副本）</strong></td><td>将 key 复制为 key_1~key_N，随机读不同副本</td><td>读多写少场景</td></tr>
+<tr><td><strong>读写分离</strong></td><td>从节点分担读流量</td><td>主从架构已部署时</td></tr>
+<tr><td><strong>Proxy 层限流</strong></td><td>在 Codis/Twemproxy 层对单 Key 限流</td><td>有代理层架构时</td></tr>
+</table>
+
+<div class="key-point">
+<strong>面试标准回答模板：</strong>本地缓存（Caffeine）+ Redis 两级缓存。热 Key 在 JVM 内存中缓存 1-3 秒，过期后再查 Redis。这样单机就能扛住数万 QPS，极大减轻 Redis 压力。
+</div>
+</div>
+
+<!-- ==================== 3. 延迟双删 ==================== -->
+<h2 class="md-h2">三、延迟双删策略</h2>
+<p class="section-intro">缓存一致性的经典追问。课程讲了 Cache-Aside 但没讲延迟双删。</p>
+
+<div class="topic-card">
+<h3>先删缓存再更新数据库，还是反过来？ <span class="badge critical">必问</span></h3>
+<p class="scene">面试场景：聊到缓存与数据库一致性时，必然深入追问</p>
+
+<h4>三种策略对比</h4>
+<table class="compare-table">
+<tr><th>策略</th><th>步骤</th><th>问题</th></tr>
+<tr><td><strong>先删缓存，再更新DB</strong></td><td>1.删缓存 → 2.更新DB</td><td>并发下：线程B在步骤1和2之间读到旧DB值写入缓存，导致不一致</td></tr>
+<tr><td><strong>先更新DB，再删缓存</strong></td><td>1.更新DB → 2.删缓存</td><td>推荐方案。极端并发下仍有短暂不一致窗口，但概率极低</td></tr>
+<tr><td><strong>延迟双删</strong></td><td>1.删缓存 → 2.更新DB → 3.延迟N毫秒 → 4.再删缓存</td><td>兜底方案，覆盖并发不一致窗口</td></tr>
+</table>
+
+<h4>延迟双删流程图</h4>
+<div class="code-block">
+<span class="comment">// Java 伪代码</span>
+<span class="keyword">public void</span> update(String key, Object value) {
+    <span class="comment">// 第一次删除缓存</span>
+    redis.del(key);
+
+    <span class="comment">// 更新数据库</span>
+    db.update(value);
+
+    <span class="comment">// 延迟后第二次删除（兜底）</span>
+    executor.schedule(() -> redis.del(key),
+        <span class="string">500</span>, TimeUnit.MILLISECONDS);
+}
+</div>
+
+<h4>延迟时间怎么定？</h4>
+<ul>
+<li>延迟时间 = <strong>读业务耗时 + 几百毫秒</strong>（确保并发读请求已完成）</li>
+<li>通常设 <strong>300ms ~ 1s</strong>，根据业务读 DB 的平均耗时评估</li>
+</ul>
+
+<div class="key-point">
+<strong>面试结论：</strong>推荐「先更新DB，再删缓存」（Cache-Aside）。如果对一致性要求高，可以加延迟双删做兜底。如果要求强一致，考虑 Canal 监听 binlog 异步删缓存。
+</div>
+</div>
+
+<!-- ==================== 4. Redlock ==================== -->
+<h2 class="md-h2">四、Redlock 争议</h2>
+<p class="section-intro">用 Redisson 必问。课程讲了分布式锁原理，但没涉及 Redlock 和社区争议。</p>
+
+<div class="topic-card">
+<h3>Redisson 分布式锁底层是什么？Redlock 可靠吗？ <span class="badge critical">必问</span></h3>
+<p class="scene">面试场景：你说熟悉 Redisson，面试官一定追问底层实现和 Redlock 争议</p>
+
+<h4>Redisson 单节点锁的实现</h4>
+<ul>
+<li>底层使用 <strong>Lua 脚本</strong>保证加锁原子性（SETNX + EXPIRE 合为一个 Lua）</li>
+<li>支持<strong>可重入</strong>：用 Hash 结构存储，field 为线程ID，value 为重入次数</li>
+<li><strong>看门狗机制</strong>（Watchdog）：加锁成功后启动后台线程，每隔 lockWatchdogTimeout/3 （默认10秒）自动续期，避免业务未执行完锁就过期</li>
+</ul>
+
+<div class="code-block">
+<span class="comment">-- Redisson 加锁 Lua 脚本核心逻辑</span>
+<span class="keyword">if</span> redis.call(<span class="string">'exists'</span>, KEYS[1]) == 0 <span class="keyword">then</span>
+    redis.call(<span class="string">'hincrby'</span>, KEYS[1], ARGV[2], 1)  <span class="comment">-- ARGV[2] = 线程ID</span>
+    redis.call(<span class="string">'pexpire'</span>, KEYS[1], ARGV[1])   <span class="comment">-- ARGV[1] = 过期时间</span>
+    <span class="keyword">return</span> nil
+<span class="keyword">end</span>
+<span class="keyword">if</span> redis.call(<span class="string">'hexists'</span>, KEYS[1], ARGV[2]) == 1 <span class="keyword">then</span>
+    redis.call(<span class="string">'hincrby'</span>, KEYS[1], ARGV[2], 1)  <span class="comment">-- 可重入：计数+1</span>
+    redis.call(<span class="string">'pexpire'</span>, KEYS[1], ARGV[1])
+    <span class="keyword">return</span> nil
+<span class="keyword">end</span>
+<span class="keyword">return</span> redis.call(<span class="string">'pttl'</span>, KEYS[1])  <span class="comment">-- 加锁失败，返回剩余时间</span>
+</div>
+
+<h4>Redlock 算法</h4>
+<p>Redis 作者 Antirez 提出的<strong>多节点分布式锁方案</strong>：</p>
+<ol>
+<li>向 <strong>N 个独立 Redis 实例</strong>（推荐5个）依次加锁</li>
+<li>如果在超时时间内，成功获取 <strong>超过半数</strong>（≥N/2+1）实例的锁，则加锁成功</li>
+<li>锁的有效时间 = 初始有效时间 - 加锁消耗时间</li>
+<li>解锁时向所有实例发送 DEL</li>
+</ol>
+
+<h4>Martin Kleppmann 的质疑</h4>
+<ul>
+<li><strong>时钟跳跃问题</strong>：如果某个 Redis 节点发生时钟跳跃（NTP 校时），锁可能提前过期，导致两个客户端同时持有锁</li>
+<li><strong>GC 暂停问题</strong>：客户端获取锁后遭遇长时间 GC 停顿（STW），锁过期了但客户端不知道，继续操作共享资源</li>
+<li><strong>建议</strong>：如果需要强一致性，应该使用带 <strong>fencing token</strong> 的方案（ZooKeeper/etcd）</li>
+</ul>
+
+<h4>Antirez 的回应</h4>
+<ul>
+<li>时钟跳跃可以通过运维手段避免（禁止大幅度 NTP 调整）</li>
+<li>GC 暂停问题不是 Redlock 特有的，任何分布式锁都有这个问题</li>
+</ul>
+
+<div class="interview-qa">
+<div class="q">那实际项目中你怎么选择？</div>
+<div class="a">对于大多数业务场景，<strong>Redisson 单节点锁 + 看门狗续期</strong>已经足够（Redis 本身是主从+哨兵高可用）。只有在极端要求"绝对不能有两个客户端同时拿到锁"的金融/支付场景，才需要考虑 ZooKeeper/etcd。Redlock 在实际生产中用得不多，因为部署5个独立实例的成本太高，且争议未解。</div>
+</div>
+</div>
+
+<!-- ==================== 5. Redis vs Memcached ==================== -->
+<h2 class="md-h2">五、Redis 与 Memcached 对比</h2>
+<p class="section-intro">经典面试题，课程完全没涉及。</p>
+
+<div class="topic-card">
+<h3>Redis 和 Memcached 有什么区别？ <span class="badge important">高频</span></h3>
+
+<table class="compare-table">
+<tr><th>维度</th><th>Redis</th><th>Memcached</th></tr>
+<tr><td><strong>数据结构</strong></td><td>String、Hash、List、Set、ZSet、Stream 等丰富类型</td><td>只支持简单的 Key-Value（String）</td></tr>
+<tr><td><strong>持久化</strong></td><td>支持 AOF + RDB</td><td>不支持，纯内存，重启数据丢失</td></tr>
+<tr><td><strong>线程模型</strong></td><td>单线程命令执行（6.0 多线程网络IO）</td><td>多线程</td></tr>
+<tr><td><strong>集群方案</strong></td><td>原生 Cluster、哨兵</td><td>客户端一致性哈希</td></tr>
+<tr><td><strong>内存管理</strong></td><td>使用 jemalloc，有内存碎片问题但可优化</td><td>Slab Allocation，内存碎片少但有 Slab 浪费</td></tr>
+<tr><td><strong>事务</strong></td><td>支持 MULTI/EXEC、Lua 脚本</td><td>支持 CAS（compare-and-swap）</td></tr>
+<tr><td><strong>发布订阅</strong></td><td>支持 Pub/Sub、Stream</td><td>不支持</td></tr>
+<tr><td><strong>适用场景</strong></td><td>功能丰富，适合大多数场景</td><td>纯缓存场景，多线程利用多核更好</td></tr>
+</table>
+
+<div class="key-point">
+<strong>一句话总结：</strong>Memcached 是纯缓存，简单但高效；Redis 是"瑞士军刀"，功能强大但架构更复杂。现在 Java 项目基本都选 Redis，除非是极简缓存场景且需要多线程打满 CPU。
+</div>
+</div>
+
+<!-- ==================== 6. Lua 脚本 vs 事务 ==================== -->
+<h2 class="md-h2">六、Lua 脚本 vs 事务</h2>
+<p class="section-intro">课程讲了事务的 ACID 分析，但没有和 Lua 脚本做对比。面试常问。</p>
+
+<div class="topic-card">
+<h3>为什么推荐 Lua 脚本而不是 MULTI/EXEC？ <span class="badge important">高频</span></h3>
+
+<table class="compare-table">
+<tr><th>维度</th><th>MULTI/EXEC 事务</th><th>Lua 脚本</th></tr>
+<tr><td><strong>原子性</strong></td><td>命令排队，EXEC 时批量执行，但<strong>不支持回滚</strong></td><td>整个脚本作为一个命令原子执行</td></tr>
+<tr><td><strong>中间结果</strong></td><td>命令之间无法使用前一个命令的返回值</td><td>可以使用中间变量做条件判断</td></tr>
+<tr><td><strong>网络开销</strong></td><td>每个命令一次网络往返</td><td>一次网络往返传输整个脚本</td></tr>
+<tr><td><strong>错误处理</strong></td><td>某条命令失败，其他命令照常执行（不回滚）</td><td>脚本报错则整体不执行</td></tr>
+<tr><td><strong>CAS 乐观锁</strong></td><td>需要配合 WATCH 实现</td><td>不需要，天然原子</td></tr>
+</table>
+
+<h4>典型使用场景：库存扣减</h4>
+<div class="code-block">
+<span class="comment">-- 原子性库存扣减 Lua 脚本</span>
+<span class="keyword">local</span> stock = tonumber(redis.call(<span class="string">'GET'</span>, KEYS[1]))
+<span class="keyword">if</span> stock <span class="keyword">and</span> stock > 0 <span class="keyword">then</span>
+    redis.call(<span class="string">'DECR'</span>, KEYS[1])
+    <span class="keyword">return</span> 1  <span class="comment">-- 扣减成功</span>
+<span class="keyword">end</span>
+<span class="keyword">return</span> 0  <span class="comment">-- 库存不足</span>
+</div>
+
+<div class="code-block">
+<span class="comment">// Java 调用方式</span>
+String script = <span class="string">"local stock = tonumber(redis.call('GET', KEYS[1])) ..."</span>;
+Long result = redisTemplate.execute(
+    <span class="keyword">new</span> DefaultRedisScript&lt;&gt;(script, Long.<span class="keyword">class</span>),
+    Collections.singletonList(<span class="string">"stock:1001"</span>)
+);
+</div>
+
+<div class="key-point">
+<strong>面试结论：</strong>实际开发中几乎不用 MULTI/EXEC 事务，用 <strong>Lua 脚本</strong>代替。因为 Lua 脚本能做条件判断、性能更好、真正原子。Redisson 的分布式锁底层也是 Lua 脚本实现的。
+</div>
+</div>
+
+<!-- ==================== 7. Pipeline ==================== -->
+<h2 class="md-h2">七、Pipeline 批量操作</h2>
+<p class="section-intro">实际开发高频使用，课程没有讲。</p>
+
+<div class="topic-card">
+<h3>Pipeline 是什么？和 MGET 有什么区别？ <span class="badge important">高频</span></h3>
+
+<h4>Pipeline 原理</h4>
+<p>客户端将多个命令<strong>打包一次性发送</strong>给 Redis，Redis 顺序执行后将结果<strong>一次性返回</strong>。核心收益是<strong>减少网络往返次数（RTT）</strong>。</p>
+
+<ul>
+<li>不使用 Pipeline：100 个命令 = 100 次 RTT（假设 RTT=1ms，总耗时 ≈ 100ms）</li>
+<li>使用 Pipeline：100 个命令 = 1 次 RTT（总耗时 ≈ 1ms + 命令执行时间）</li>
+</ul>
+
+<h4>Pipeline vs MGET/MSET</h4>
+<table class="compare-table">
+<tr><th>维度</th><th>Pipeline</th><th>MGET/MSET</th></tr>
+<tr><td><strong>原子性</strong></td><td>非原子，命令可能被其他客户端插入</td><td>原子操作</td></tr>
+<tr><td><strong>命令类型</strong></td><td>可以混合不同类型的命令</td><td>只能批量 GET/SET</td></tr>
+<tr><td><strong>Cluster</strong></td><td>需要按 slot 分组发送</td><td>同样需要 key 在同一 slot</td></tr>
+</table>
+
+<h4>Java 示例</h4>
+<div class="code-block">
+<span class="comment">// Spring Data Redis Pipeline 示例</span>
+List&lt;Object&gt; results = redisTemplate.executePipelined(
+    (RedisCallback&lt;Object&gt;) connection -> {
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = 0; i &lt; 1000; i++) {
+            connection.stringCommands().get(
+                (<span class="string">"user:"</span> + i).getBytes()
+            );
+        }
+        <span class="keyword">return null</span>;
+    }
+);
+</div>
+
+<div class="key-point">
+<strong>注意事项：</strong>Pipeline 打包的命令数不宜过多（建议每批 ≤ 500），太多会占用大量内存缓冲区，也会阻塞后续命令。
+</div>
+</div>
+
+<!-- ==================== 8. Pub/Sub ==================== -->
+<h2 class="md-h2">八、Pub/Sub 发布订阅</h2>
+<p class="section-intro">Redis 的消息通知机制，课程完全没讲。面试偶尔会问到。</p>
+
+<div class="topic-card">
+<h3>Redis Pub/Sub 怎么用？有什么局限？ <span class="badge good">了解</span></h3>
+
+<h4>基本模型</h4>
+<ul>
+<li>生产者通过 <code>PUBLISH channel message</code> 发送消息</li>
+<li>消费者通过 <code>SUBSCRIBE channel</code> 订阅频道</li>
+<li>支持 <code>PSUBSCRIBE pattern*</code> 模式匹配订阅</li>
+</ul>
+
+<h4>致命缺陷</h4>
+<ul>
+<li><strong>消息不持久化</strong>：发布时如果没有订阅者在线，消息直接丢失</li>
+<li><strong>没有 ACK 机制</strong>：无法确认消费者是否成功处理</li>
+<li><strong>没有消费者组</strong>：无法多消费者分担负载（7.0 的 Sharded Pub/Sub 改善了集群场景）</li>
+<li><strong>客户端断线重连后丢消息</strong></li>
+</ul>
+
+<h4>适用场景</h4>
+<ul>
+<li>实时通知（不要求可靠性）：聊天室、配置变更通知、缓存失效广播</li>
+<li>如果要可靠消息，应该用 <strong>Redis Stream</strong> 或 <strong>RocketMQ/Kafka</strong></li>
+</ul>
+
+<div class="interview-qa">
+<div class="q">Redis 适合做消息队列吗？</div>
+<div class="a">看场景。如果是轻量级、允许少量丢失的场景（如通知、排行榜更新），可以用 Redis Stream（5.0+），它支持消费者组和 ACK。但如果是订单、支付等对可靠性要求极高的场景，应该用 RocketMQ 或 Kafka，因为它们有完善的持久化、重试、死信队列机制。Pub/Sub 不适合做消息队列，只适合做广播通知。</div>
+</div>
+</div>
+
+<!-- ==================== 9. Redis 7.0 ==================== -->
+<h2 class="md-h2">九、Redis 7.0+ 新特性</h2>
+<p class="section-intro">课程截止到 6.0。面试问"Redis最新版本有什么特性"时的加分项。</p>
+
+<div class="topic-card">
+<h3>Redis 7.0 有哪些重要更新？ <span class="badge good">加分项</span></h3>
+
+<h4>核心新特性</h4>
+<ul>
+<li><strong>Redis Functions</strong>：取代 EVAL 的 Lua 脚本管理方式。函数随数据持久化、主从复制，不再需要客户端每次传输脚本。通过 <code>FUNCTION LOAD</code> 加载，<code>FCALL</code> 调用</li>
+<li><strong>Multi-part AOF</strong>：AOF 不再是单个大文件，拆分为 base 文件 + 增量文件 + manifest 清单。AOF 重写不再需要 fork 完整的 RDB，效率大幅提升</li>
+<li><strong>Sharded Pub/Sub</strong>：消息只在 key 所属的 slot 节点内传播，而非广播到所有节点。解决了 Cluster 模式下 Pub/Sub 的带宽浪费问题</li>
+<li><strong>ACL v2</strong>：支持按 Pub/Sub 频道的权限控制，更细粒度的安全管理</li>
+<li><strong>命令拆分</strong>：拆分出子命令（如 <code>CLIENT NO-EVICT</code>），更清晰的命令语义</li>
+<li><strong>Listpack 全面替代 Ziplist</strong>：解决 Ziplist 级联更新的性能问题</li>
+</ul>
+
+<div class="key-point">
+<strong>面试怎么说：</strong>不需要每个都深入，但能说出 "Multi-part AOF 解决了 AOF 重写的性能问题" 和 "Functions 让 Lua 脚本可以持久化和复制" 就已经足够让面试官眼前一亮了。
+</div>
+</div>
+
+<!-- ==================== 10. "为什么快"完整版 ==================== -->
+<h2 class="md-h2">十、"Redis 为什么这么快"完整版回答</h2>
+<p class="section-intro">面试最高频的开场问题。课程讲了一部分，这里给出面试标准的完整话术。</p>
+
+<div class="topic-card">
+<h3>Redis 为什么能达到 10万+ QPS？ <span class="badge critical">必问</span></h3>
+
+<h4>六个核心原因（按面试推荐顺序）</h4>
+<ol>
+<li><strong>纯内存操作</strong>：数据存在内存中，读写都是内存级别的微秒操作，比磁盘快几个数量级</li>
+<li><strong>高效数据结构</strong>：底层使用了 SDS、ziplist/listpack、skiplist、intset 等紧凑编码结构，减少内存分配和 CPU 消耗</li>
+<li><strong>单线程模型</strong>：避免了多线程的上下文切换和锁竞争开销。注意：这里的单线程是指<strong>命令执行</strong>在单线程中，网络IO（6.0+）是多线程的</li>
+<li><strong>IO 多路复用</strong>：使用 epoll/kqueue 机制，一个线程可以同时监听大量客户端连接，非阻塞 IO</li>
+<li><strong>高效的通信协议</strong>：RESP 协议简单，解析快，开销小</li>
+<li><strong>渐进式设计</strong>：rehash 渐进式执行、大 Key 异步删除（lazy-free）等，避免长时间阻塞</li>
+</ol>
+
+<div class="interview-qa">
+<div class="q">那 Redis 6.0 为什么引入多线程？引入后还是单线程吗？</div>
+<div class="a">Redis 6.0 的多线程仅用于<strong>网络 IO 的读写</strong>（读取请求、发送响应），命令执行仍然是单线程的。引入原因是网络 IO 成为了性能瓶颈，尤其在高并发、大量小命令的场景下，单线程处理网络 IO 跟不上。多线程网络 IO 能显著提升吞吐量（官方数据：性能提升约一倍），同时保持了命令执行的单线程模型，不需要处理并发安全问题。默认不开启，需配置 <code>io-threads</code>。</div>
+</div>
+</div>
+
+<hr/>
+
+<h2 class="md-h2">小结</h2>
+<p>以上 10 个专题覆盖了课程之外、Java 面试中最常被问到的 Redis 知识点。建议按优先级复习：</p>
+<ol>
+<li><strong>必问三件套</strong>：大 Key + 热 Key + 延迟双删 —— 每次面试几乎都会涉及</li>
+<li><strong>Redisson 深度</strong>：Redlock 争议 + 看门狗机制 —— 说了熟悉 Redisson 必追问</li>
+<li><strong>"为什么快"标准答案</strong>：6个点按顺序说清，这是开场第一问</li>
+<li><strong>Lua 脚本 > MULTI/EXEC</strong>：能现场写一个库存扣减的 Lua 脚本就是加分项</li>
+<li><strong>Redis 7.0</strong>：知道 Multi-part AOF 和 Functions 就够</li>
+</ol>
+
+                </div>
+                <nav class="page-nav" id="pageNav"></nav>
+            </div>
+        </main>
+    </div>
+    <script src="../assets/nav.js"></script>
+</body></html>
