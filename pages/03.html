@@ -135,7 +135,7 @@
       </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>事件就绪通知</span></div><div class="flow-node orange" style="padding:12px 24px">
         事件队列<br>
         <small style="font-weight:400;font-size:0.75rem">Accept事件 → accept() &nbsp;|&nbsp; Read事件 → get()</small>
-      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>回调处理</span></div><div class="flow-node green" style="padding:14px 28px">
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>回调处理</span></div><div class="flow-node green" style="padding:12px 24px">
         Redis 单线程<br>
         <small style="font-weight:400;font-size:0.75rem">逐一处理就绪事件，执行命令，返回结果</small>
       </div></div></div>
@@ -171,7 +171,83 @@
 <p>另外，我也剧透下，可能你也注意到了，2020年5月，Redis 6.0的稳定版发布了，Redis 6.0中提出了多线程模型。那么，这个多线程模型和这节课所说的IO模型有什么关联？会引入复杂的并发控制问题吗？会给Redis 6.0带来多大提升？
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis的单线程指什么？Redis真的完全是单线程吗？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">单线程指<b>网络IO和键值对读写操作由一个线程完成</b>。但Redis并非完全单线程：RDB的bgsave和AOF重写由子进程执行；Redis 4.0的lazyfree大key删除由后台线程处理；Redis 6.0网络数据读写由多个IO线程并行处理。准确说法是Redis的<b>命令执行</b>是单线程的。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis单线程为什么还能这么快？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">三个关键因素：<b>1.内存操作</b>：数据在内存中，访问百ns级别；<b>2.高效数据结构</b>：哈希表O(1)查找、跳表O(logN)范围查询；<b>3.IO多路复用</b>：epoll/kqueue技术让单线程同时监听大量连接，避免多线程的上下文切换和锁竞争。核心思路是每个操作耗时极短，瓶颈在网络IO而非CPU。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">什么是IO多路复用？Redis使用哪种实现？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">IO多路复用允许单个线程同时监听多个socket连接，当某连接有数据可读写时内核通知应用。常见实现：<b>select</b>（1024连接限制）、<b>poll</b>（无限制但需遍历）、<b>epoll</b>（Linux，事件驱动O(1)）、<b>kqueue</b>（BSD/macOS）。Redis在Linux用epoll，macOS用kqueue，基于Reactor模型高效处理数万并发连接。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis单线程模型有什么潜在问题？如何避免？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">问题：<b>1.</b>长时间命令（KEYS *、大key的DEL）阻塞所有请求；<b>2.</b>单线程只能用一个CPU核心；<b>3.</b>慢查询影响全局。避免方法：避免O(n)命令操作大量数据（用SCAN替代KEYS）；用UNLINK替代DEL异步删除大key；用Redis Cluster多实例利用多核；设置slowlog监控。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis 6.0的多线程和之前有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Redis 6.0多线程<b>仅用于网络IO</b>：多个IO线程并行读取客户端数据和写回响应，但<b>命令执行仍是单线程串行</b>。关键区别：不需要加锁，保持线程安全和简洁。主要解决高并发场景下网络IO成为瓶颈的问题，测试显示可提升一倍以上吞吐量。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>

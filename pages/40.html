@@ -154,7 +154,83 @@
 <p>NVM内存是近年来存储设备领域中一个非常大的变化，它既能持久化保存数据，还能像内存一样快速访问，这必然会给当前基于DRAM和硬盘的系统软件优化带来新的机遇。现在，很多互联网大厂已经开始使用NVM内存了，希望你能够关注这个重要趋势，为未来的发展做好准备。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">NVM内存是什么？和传统DRAM有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>NVM（Non-Volatile Memory）</b>，如Intel Optane DC Persistent Memory。和DRAM区别：<b>1.非易失</b>：掉电不丢数据（DRAM掉电丢失）。<b>2.容量更大</b>：单条可达512GB（DRAM通常64-128GB）。<b>3.成本更低</b>：单位容量价格约DRAM的1/3-1/4。<b>4.性能稍低</b>：读延迟约350ns（DRAM约100ns），写延迟更大。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">NVM的两种使用模式分别是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>Memory模式</b>：NVM作为大容量内存使用，DRAM作为NVM的缓存。对应用透明，无需代码修改。Redis直接获得更大内存容量但访问延迟略高。<b>App Direct模式</b>：NVM作为持久化存储设备，通过DAX文件系统（如ext4-dax）直接访问。应用需要修改代码使用pmem库。可用于替代SSD做持久化存储。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">NVM如何帮助Redis降低故障恢复时间？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">传统Redis恢复：加载RDB/AOF文件→解析→重建内存数据结构，大实例可能需要<b>数分钟</b>。NVM方案（App Direct模式）：数据直接存在NVM上，重启后数据<b>仍然在原地</b>，只需重建索引等少量工作即可恢复服务，恢复时间从分钟级降到<b>秒级</b>。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">NVM+Redis在实际应用中有哪些挑战？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">挑战：<b>1.</b>NVM读写不对称（写比读慢更多），需要优化写路径。<b>2.</b>数据结构需要适配NVM（如指针在重启后可能失效）。<b>3.</b>NVM的磨损均衡问题（写寿命有限）。<b>4.</b>硬件支持范围有限（目前主要是Intel平台）。<b>5.</b>编程模型改变（App Direct模式需要使用PMDK库）。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">基于NVM的Redis和基于SSD的Pika相比有什么优势？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>NVM方案</b>：延迟接近DRAM（350ns vs SSD的μs-ms级），适合对延迟敏感的场景；数据在NVM上可直接寻址不需要经过文件系统。<b>Pika</b>：基于SSD+RocksDB，容量更大更便宜，但延迟高于NVM方案。NVM是性能和持久化的折中，Pika是容量和成本的折中。NVM硬件普及度目前低于SSD。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>

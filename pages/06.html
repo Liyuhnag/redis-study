@@ -230,7 +230,83 @@
 <p>不过，主从库模式使用读写分离虽然避免了同时写多个实例带来的数据不一致问题，但是还面临主库故障的潜在风险。主库故障了从库该怎么办，数据还能保持一致吗，Redis还能正常提供服务吗？在接下来的两节课里，我会和你具体聊聊主库故障后，保证服务可靠性的解决方案。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis主从复制的完整流程是什么？全量复制和增量复制何时触发？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">流程：从库执行replicaof→主库bgsave生成RDB→发送给从库→从库清空并加载→主库发送期间新写命令→后续命令传播实时同步。<b>全量复制</b>：首次建立主从关系或repl_backlog不足时。<b>增量复制</b>：断连重连后repl_backlog_buffer中仍有未同步数据时，只传输增量部分。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">replication buffer和repl_backlog_buffer有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>replication buffer</b>：每个从库专属，暂存主库要发送给该从库的命令，溢出则断开连接。<b>repl_backlog_buffer</b>：全局唯一环形缓冲区，所有从库共享，记录主库最近写入命令，用于增量复制时通过offset判断。关键区别：前者是传输缓冲，后者是历史命令环形队列。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">为什么Redis主从采用读写分离？从库为什么不能写？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">读写分离原因：保证数据一致性（单向数据流避免冲突）、架构简洁、多从库分担读压力。从库不能写因为：写入不会同步到其他节点造成不一致；全量重同步时本地写入被清空；默认read-only配置。这是CAP定理的实践：Redis选择CP，牺牲从库写能力。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">主从复制延迟会导致什么问题？如何监控和优化？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">问题：读到过期数据、数据不一致、写后立即读不到。监控：INFO replication查看master_repl_offset和slave_repl_offset差值、slave_lag参数。优化：保证主从网络质量、避免大key操作导致传播延迟、强一致读直接读主库、使用WAIT命令等待从库确认。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">级联复制（主-从-从架构）的优缺点是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>优点</b>：减轻主库压力（全量复制由上级从库负责）、降低主库网络带宽消耗。<b>缺点</b>：链路越长末端延迟越大、中间从库故障影响下游所有从库、架构复杂。适用于从库数量很多（10+）时减轻主库负载。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>

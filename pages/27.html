@@ -181,10 +181,96 @@ if (r &lt; p) counter++;</code></pre>
 <p>此外，如果业务应用中有短时高频访问的数据，除了LFU策略本身会对数据的访问次数进行自动衰减以外，我再给你个小建议：你可以优先使用volatile-lfu策略，并根据这些数据的访问时限设置它们的过期时间，以免它们留存在缓存中造成污染。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">缓存被污染时的淘汰策略优化</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node red" style="padding:12px 24px">缓存污染：留存大量不再访问的数据</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>LRU 的不足</span></div><div class="flow-node orange">只看最近一次访问时间<br><small style="font-weight:400;font-size:0.75rem">偶发的全量扫描会污染整个缓存</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>LFU 策略</span></div><div class="flow-node green">综合访问频次 + 衰减时间<br><small style="font-weight:400;font-size:0.75rem">counter 计数 + 时间衰减因子<br>lfu-log-factor / lfu-decay-time</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>推荐配置</span></div><div class="flow-node teal">allkeys-lfu 或 volatile-lfu<br><small style="font-weight:400;font-size:0.75rem">Redis 4.0+ 可用，有效解决缓存污染</small></div></div></div>
+  </div>
+  <div class="flow-caption">缓存污染场景下优先使用 LFU 策略，按访问频次而非最近时间淘汰数据</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">什么是缓存污染？为什么LRU策略无法解决？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>缓存污染</b>：不常访问的数据被加载到缓存后长期占用空间，挤占热数据。LRU的问题：一次性全量扫描（如数据分析遍历所有key）会把所有数据标记为最近访问，真正的热数据反而可能被淘汰。LRU只看<b>最后访问时间</b>，无法区分「频繁访问」和「偶尔访问」。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis的近似LRU和标准LRU有什么不同？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">标准LRU维护全局链表，每次访问移到头部，淘汰尾部。Redis<b>不维护链表</b>（内存开销太大），而是在每个key的RedisObject中记录最近访问时间戳。淘汰时<b>随机采样N个key</b>（maxmemory-samples），淘汰其中时间戳最旧的。增大采样数效果接近标准LRU。这种近似算法节省内存和CPU。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">LFU策略的计数器是如何工作的？为什么需要衰减？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">LFU在RedisObject的lru字段分为两部分：<b>16位时间戳（分钟精度）</b>和<b>8位频率计数器(LOG_C)</b>。计数器<b>非线性递增</b>：访问时按概率递增（1/(旧值*lfu-log-factor+1)），值越大递增越难，最大255。<b>衰减</b>：每隔一段时间减少计数器（由lfu-decay-time控制），避免历史高频但当前不活跃的key长驻缓存。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">LFU策略相比LRU有什么优势？什么场景更适合？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">LFU优势：<b>1.</b>一次性全量扫描不会污染缓存（访问一次频率很低仍会被淘汰）；<b>2.</b>能准确识别长期热点数据。适合场景：访问频率有明显差异、存在全量扫描操作、对缓存命中率要求高的业务。LRU适合：访问模式比较均匀、数据没有明显冷热之分的场景。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何调优LFU的两个关键参数？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>lfu-log-factor</b>（默认10）：控制计数器递增速度。值越大递增越慢，适合访问量很大的场景（避免所有key都达到255）。值越小递增越快，适合访问量较小的场景。<b>lfu-decay-time</b>（默认1，单位分钟）：控制计数器衰减速度。值越大衰减越慢，历史数据影响越大；值为0则每次访问都可能衰减。建议根据业务的访问模式调整。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

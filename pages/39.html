@@ -195,7 +195,83 @@ CLIENT TRACKING ON BCAST REDIRECT 303</code></pre>
 <p>最后，我也再给你一个小建议：因为Redis 6.0是刚刚推出的，新的功能特性还需要在实际应用中进行部署和验证，所以，如果你想试用Redis 6.0，可以尝试先在非核心业务上使用Redis 6.0，一方面可以验证新特性带来的性能或功能优势，另一方面，也可以避免因为新特性不稳定而导致核心业务受到影响。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis 6.0的多线程是如何工作的？和之前版本有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Redis 6.0多线程<b>仅用于网络IO</b>：多个IO线程并行读取客户端请求数据和写回响应。<b>命令执行仍是单线程</b>串行进行，无需加锁。之前版本网络IO和命令执行都在主线程。配置：io-threads N（建议CPU核心数-1，最大128）和io-threads-do-reads yes。默认关闭，需手动开启。性能提升约一倍。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">客户端缓存（Client-side Caching）的两种模式是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>默认模式（tracking）</b>：服务端记录每个客户端访问了哪些key，key被修改时向相关客户端发送<b>invalidation消息</b>。内存开销较大。<b>广播模式（broadcasting）</b>：客户端订阅key的前缀，该前缀下任何key变更都通知所有订阅者。内存开销小但可能收到不需要的通知。通过CLIENT TRACKING ON [BCAST PREFIX prefix]开启。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">ACL（Access Control List）权限控制能做什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Redis 6.0之前只有单一密码（requirepass）。ACL支持：<b>1.多用户</b>：创建不同用户设置不同密码。<b>2.命令级控制</b>：限制用户可执行的命令（如只允许GET/SET，禁止FLUSHALL）。<b>3.Key级控制</b>：限制用户可访问的key模式（如只能访问user:*前缀的key）。命令：ACL SETUSER、ACL LIST、ACL GETUSER。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">RESP 3协议相比RESP 2有什么改进？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">RESP 2只有5种类型（简单字符串、错误、整数、批量字符串、数组），存在<b>类型歧义</b>（如HGETALL返回数组但逻辑上是Map）。RESP 3新增：<b>Map</b>（键值对）、<b>Set</b>（集合）、<b>Boolean</b>、<b>Null</b>、<b>Double</b>（浮点）、<b>Big Number</b>等。客户端通过<b>HELLO 3</b>命令切换到RESP 3，向下兼容RESP 2。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis 6.0多线程的最佳配置实践是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>1.</b>io-threads设置为CPU核心数-1或核心数的一半（留核心给OS和其他进程）。<b>2.</b>4核及以下不建议开启（收益有限）。<b>3.</b>开启io-threads-do-reads yes让IO线程也处理读操作。<b>4.</b>绑核（server_cpulist配置）避免CPU迁移。<b>5.</b>监控CPU使用率确认多线程是否有收益。<b>6.</b>不需要修改应用代码，协议层完全兼容。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>

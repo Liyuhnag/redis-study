@@ -169,6 +169,24 @@ QUEUED
 </p>
 <p>下面来具体学习下RedisTimeSeries。
 </p>
+
+<div class="flow-diagram">
+  <div class="flow-title">时间序列数据存储方案对比</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">时间序列数据（设备ID + 指标 + 时间戳）</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>读写需求分析</span></div><div class="flow-highlight">写：高并发插入 | 读：单点查询 + 范围查询 + 聚合计算</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>两种方案</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">方案一</div>
+          <div class="flow-node orange">Hash + Sorted Set<br><small style="font-weight:400;font-size:0.75rem">Hash: 单点 O(1) 查询<br>ZSet: 范围 ZRANGEBYSCORE<br>MULTI/EXEC 保证原子写入</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">方案二</div>
+          <div class="flow-node green">RedisTimeSeries<br><small style="font-weight:400;font-size:0.75rem">TS.ADD 写入<br>TS.RANGE 范围+聚合<br>标签过滤 + 自动过期</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node teal">选型建议<br><small style="font-weight:400;font-size:0.75rem">简单查询 → Hash+ZSet | 聚合频繁 → RedisTimeSeries</small></div></div></div>
+  </div>
+  <div class="flow-caption">根据查询模式和聚合需求选择合适的时间序列数据存储方案</div>
+</div>
+
 <h2 class="md-h2">基于RedisTimeSeries模块保存时间序列数据</h2>
 <p>RedisTimeSeries是Redis的一个扩展模块。它专门面向时间序列数据提供了数据类型和访问接口，并且支持在Redis实例上直接对数据进行按时间范围的聚合计算。
 </p>
@@ -260,10 +278,87 @@ OK</code></pre>
 <li>如果你的部署环境中网络、内存资源有限，而且数据量大，聚合计算频繁，需要按数据集合属性查询，可以优先考虑第二种方案。</li>
 </ul>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis保存时间序列数据有哪些方案？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>Sorted Set</b>（score=时间戳）：支持范围查询但不支持聚合、member不允许重复。<b>Hash+Sorted Set组合</b>：数据更丰富但维护复杂。<b>RedisTimeSeries模块</b>：专为时间序列设计，内置聚合、自动过期、降采样、标签索引。大规模推荐RedisTimeSeries。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">RedisTimeSeries有哪些核心功能？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">TS.ADD添加数据点；TS.RANGE时间范围查询；内置聚合计算（AVG/SUM/MIN/MAX/COUNT）；<b>降采样</b>自动压缩高精度为低精度数据；<b>RETENTION</b>设置数据保留时间自动过期；<b>Labels标签</b>支持多维过滤查询。优势：聚合在服务端完成避免大量数据传输。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Sorted Set存时间序列如何解决member不能重复的问题？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">方案：member中拼接唯一标识如"timestamp:temperature:25.3"；包含序列号"value_ts_seqno"；使用<b>Redis Stream</b>（5.0+）自动生成唯一ID天然支持时间序列；Hash编码将完整数据JSON作为member。推荐Redis Stream（XADD/XRANGE）。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">时间序列数据量持续增长如何管理过期和内存？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">策略：<b>按时间分Key</b>（每天一个key设EXPIRE）；<b>定期清理</b>（ZREMRANGEBYSCORE删除旧数据）；<b>RedisTimeSeries RETENTION</b>自动过期；<b>降采样存储</b>（近期高精度，历史低精度如每小时平均值），大幅减少内存占用。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis Stream和Sorted Set在时间序列场景如何选择？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>Stream</b>：自动有序唯一ID、XRANGE高效范围查询、支持消费者组实时处理、MAXLEN自动裁剪，适合简单时间序列记录。<b>Sorted Set</b>：成熟但member需唯一、不支持聚合。选择：记录和查询→Stream；排序排名→Sorted Set；聚合降采样→RedisTimeSeries。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

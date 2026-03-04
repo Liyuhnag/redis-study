@@ -35,16 +35,6 @@
             <div class="hero">
                 <h1>07 - 哨兵机制：主库挂了，如何不间断服务？</h1>
                 <p class="subtitle">Redis核心技术与实战</p>
-
-<div class="flow-diagram">
-  <div class="flow-title">哨兵主库故障切换流程</div>
-  <div class="flow-body">
-    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node red">主库故障 (Master Down)
-      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>哨兵检测</span></div><div class="flow-node purple">① 主观下线 → 多数哨兵确认 → 客观下线</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node orange">② 哨兵Leader选举（Raft协议）</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node blue">③ 选新主库<br><small style="font-weight:400;font-size:0.75rem">筛选：在线 + 网络好 + 优先级 + 复制偏移量最大</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">④ 通知从库：replicaof 新主库</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">⑤ 通知客户端：更新主库连接地址</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node teal">故障切换完成，服务恢复</div></div></div>
-  </div>
-  <div class="flow-caption">监控 → 选主 → 通知，三大任务保障高可用</div>
-</div>
-
             </div>
             <div class="container">
                 <div class="article-content">
@@ -58,6 +48,15 @@
         <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">4. 哨兵需要多实例部署形成集群，避免单点误判</li>
         <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">5. 切换过程中写操作会中断，需客户端配合缓存请求</li>
     </ul>
+</div>
+
+<div class="flow-diagram">
+  <div class="flow-title">哨兵主库故障切换流程</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node red">主库故障 (Master Down)
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>哨兵检测</span></div><div class="flow-node purple">① 主观下线 → 多数哨兵确认 → 客观下线</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node orange">② 哨兵Leader选举（Raft协议）</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node blue">③ 选新主库<br><small style="font-weight:400;font-size:0.75rem">筛选：在线 + 网络好 + 优先级 + 复制偏移量最大</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">④ 通知从库：replicaof 新主库</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">⑤ 通知客户端：更新主库连接地址</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node teal">故障切换完成，服务恢复</div></div></div>
+  </div>
+  <div class="flow-caption">监控 → 选主 → 通知，三大任务保障高可用</div>
 </div>
 
                     <p>上节课，我们学习了主从库集群模式。在这个模式下，如果从库发生故障了，客户端可以继续向主库或其他从库发送请求，进行相关的操作，但是如果主库发生故障了，那就直接会影响到从库的同步，因为从库没有相应的主库可以进行数据复制操作了。
@@ -199,7 +198,83 @@
 </ul>
 要搞懂这些问题，就不得不提哨兵集群了，下节课，我们来具体聊聊哨兵集群的机制和问题。
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis哨兵机制的三大功能是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>监控</b>：持续检查主从库运行状态；<b>通知</b>：实例异常时通知管理员或应用；<b>自动故障转移</b>：主库故障时自动将最优从库升级为主库，通知其他从库复制新主库，旧主库恢复后自动降为从库。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">主观下线和客观下线有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>主观下线(SDOWN)</b>：单个哨兵在down-after-milliseconds内未收到有效回复，仅代表该哨兵的判断，可能是误判。<b>客观下线(ODOWN)</b>：达到quorum数量的哨兵都确认主库下线后判定，才会触发故障转移。通过「少数服从多数」避免单点误判。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">哨兵选择新主库的算法是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>筛选+打分</b>。筛选：排除已下线、响应超时、与主库断连过长的从库。打分三轮：<b>1.</b>slave-priority优先级（值越小越优先，0永不升级）；<b>2.</b>复制偏移量（offset越大数据越新）；<b>3.</b>运行ID最小的。确保选出数据最完整、优先级最高的新主库。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">down-after-milliseconds参数配置过大或过小有什么影响？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">过小（如1秒）：网络瞬时波动导致误判，频繁不必要的故障转移影响可用性。过大（如60秒）：主库真正故障后长时间才发现，期间写操作全部失败。推荐5-30秒，网络好设小些，不稳定设大些，默认值30秒。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">哨兵模式下网络分区导致脑裂如何预防？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">脑裂时旧主库仍接受写入，新主库被选出后旧主库降级，分区期间写入全部丢失。预防：配置<b>min-replicas-to-write N</b>（至少N个从库连接才接受写）和<b>min-replicas-max-lag T</b>（从库延迟不超过T秒），主库被隔离时拒绝写入，减少数据丢失。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>

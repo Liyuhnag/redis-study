@@ -265,10 +265,96 @@ OK
 <p>所以，我给你一个小建议：<strong>严格按照Redis的命令规范进行程序开发，并且通过code review确保命令的正确性</strong>。这样一来，Redis的事务机制就能被应用在实践中，保证多操作的正确执行。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">Redis 分布式锁实现与 Redlock 算法</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">需要分布式互斥访问</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>加锁</span></div><div class="flow-node purple">SET lock_key unique_val NX PX 30000<br><small style="font-weight:400;font-size:0.75rem">NX: 不存在才设置 | PX: 设置过期时间</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>释放锁</span></div><div class="flow-node orange">Lua 脚本: 先 GET 比较值 → 再 DEL<br><small style="font-weight:400;font-size:0.75rem">保证只释放自己的锁（unique_val 校验）</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>高可用</span></div><div class="flow-node green">Redlock: 向 N 个独立实例加锁<br><small style="font-weight:400;font-size:0.75rem">多数(N/2+1)成功 → 加锁成功<br>锁有效期 = 过期时间 - 加锁耗时</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-highlight">单实例 → SET NX PX | 高可用 → Redlock（5个独立实例）</div></div></div>
+  </div>
+  <div class="flow-caption">分布式锁核心：原子加锁 + 唯一标识 + 自动过期 + Redlock 多实例容错</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis事务的MULTI/EXEC机制是怎样的？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">流程：<b>MULTI</b>开启事务→后续命令不立即执行而是<b>入队</b>→<b>EXEC</b>一次性执行所有入队命令→返回所有命令结果。<b>DISCARD</b>取消事务。入队阶段命令语法错误（如命令拼写错误）会导致整个事务被丢弃；执行阶段某条命令运行时错误（如对String执行LPUSH）不影响其他命令执行。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis事务能保证ACID中的哪些属性？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>原子性</b>：部分保证——入队语法错误则全部不执行，但运行时错误不回滚。<b>一致性</b>：保证——语法错误不执行、运行时错误命令结果丢弃。<b>隔离性</b>：EXEC前通过WATCH实现乐观锁；EXEC后单线程串行执行天然隔离。<b>持久性</b>：取决于持久化配置（RDB可能丢数据，AOF always模式可保证）。核心区别：Redis事务<b>不支持回滚</b>。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">WATCH命令如何实现乐观锁？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">流程：WATCH key1 key2→MULTI→操作命令入队→EXEC。EXEC执行前Redis检查被WATCH的key是否被<b>其他客户端修改</b>，如果被修改则<b>事务取消</b>（EXEC返回nil），客户端可重试。这是<b>乐观锁</b>：不加锁，提交时检查冲突。适合读多写少的并发场景，冲突少时效率高于悲观锁。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis事务和Lua脚本在原子性保证上有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>事务</b>：命令打包执行但不保证「全成功或全失败」（某命令运行时出错其余继续执行，不回滚）。<b>Lua脚本</b>：整个脚本原子执行，中间不会插入其他命令，且可以包含条件逻辑（if/else）。Lua脚本更灵活强大，适合需要条件判断的原子操作；事务适合简单的批量命令执行。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">为什么Redis不支持事务回滚？这样设计的理由是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Redis作者的设计理由：<b>1.</b>Redis命令执行出错通常是编程错误（如对错误类型执行操作），不应在生产环境出现；<b>2.</b>不支持回滚使Redis内部实现更简单、性能更高；<b>3.</b>回滚机制需要undo log和复杂的状态管理，与Redis追求简洁高性能的理念冲突。实际需要回滚语义时应使用Lua脚本+业务层补偿。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

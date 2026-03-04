@@ -235,6 +235,33 @@
 <h2 class="md-h2">小结</h2>
 <p>这节课，我们结合统计新增用户数和留存用户数、最新评论列表、用户签到数以及网页独立访客量这4种典型场景学习了集合类型的4种统计模式，分别是聚合统计、排序统计、二值状态统计和基数统计。为了方便你掌握，我把Set、Sorted Set、Hash、List、Bitmap、HyperLogLog的支持情况和优缺点汇总在了下面的表格里，希望你把这张表格保存下来，时不时地复习一下。
 </p>
+
+<div class="flow-diagram">
+  <div class="flow-title">四种集合统计模式选型决策流程</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">需要统计集合数据</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>判断统计类型</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">聚合统计</div>
+          <div class="flow-node purple">交/并/差集<br><small style="font-weight:400;font-size:0.75rem">→ Set 类型<br>SINTER / SUNION / SDIFF</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">排序统计</div>
+          <div class="flow-node orange">权重排序<br><small style="font-weight:400;font-size:0.75rem">→ Sorted Set<br>ZRANGEBYSCORE</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">二值状态</div>
+          <div class="flow-node green">0/1 统计<br><small style="font-weight:400;font-size:0.75rem">→ Bitmap<br>1亿用户仅 12MB</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">基数统计</div>
+          <div class="flow-node teal">去重计数<br><small style="font-weight:400;font-size:0.75rem">→ HyperLogLog<br>固定 12KB，误差 0.81%</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-highlight">选型关键：精确 vs 近似 | 内存 vs 功能 | 数据量级</div></div></div>
+  </div>
+  <div class="flow-caption">根据统计类型选择合适的集合数据结构，兼顾内存效率与功能需求</div>
+</div>
+
 <img src="https://static001.geekbang.org/resource/image/c0/6e/c0bb35d0d91a62ef4ca1bd939a9b136e.jpg?wh=2866%2A1739" alt="" style="max-width:100%;border-radius:8px;margin:16px 0;">
 </p>
 <p>可以看到，Set和Sorted Set都支持多种聚合统计，不过，对于差集计算来说，只有Set支持。Bitmap也能做多个Bitmap间的聚合计算，包括与、或和异或操作。
@@ -248,10 +275,87 @@
 <p>当然，Redis的应用场景非常多，这张表中的总结不一定能覆盖到所有场景。我建议你也试着自己画一张表，把你遇到的其他场景添加进去。长久积累下来，你一定能够更加灵活地把集合类型应用到合适的实践项目中。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Set和Sorted Set在统计场景中各适合什么类型的统计？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>Set</b>：去重统计（UV用SADD+SCARD）、集合运算（共同关注SINTER、推荐好友SDIFF）。<b>Sorted Set</b>：排行榜（按分数排序）、范围统计（ZCOUNT）、滑动窗口（时间戳作score）。选择依据：需要排序→Sorted Set，只需去重→Set。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">HyperLogLog是什么？适合什么场景？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">概率数据结构用于基数统计，固定占用<b>12KB</b>内存，无论统计多少元素。优点：极低内存。缺点：有0.81%标准误差、不能获取具体元素、不支持删除。适合：大规模UV统计、不要求精确数值的去重计数、内存敏感场景（Set做UV需数GB，HyperLogLog只需12KB）。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Bitmap适合解决什么问题？如何实现签到统计？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Bitmap本质是String的位数组，用SETBIT/GETBIT操作单个位。适合：签到统计、用户在线状态、布尔属性统计。签到实现：SETBIT sign:uid:202403 {day} 1，BITCOUNT统计月签到天数。1亿用户日活统计仅12MB，远小于Set。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Set集合运算在大数据量下有什么性能问题？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">时间复杂度O(N*M)，数据量大时耗时长，单线程阻塞所有请求，结果集可能很大。优化：在从库执行、用SINTERSTORE存结果分批读取、拉到客户端计算、定时预计算缓存结果、按维度拆分控制集合大小。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何高效统计1亿用户中7天连续签到的用户？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">方案：每天一个Bitmap（sign:20240301），签到时SETBIT设1。统计：BITOP AND result sign:20240301 ... sign:20240307，BITCOUNT result得结果。内存：7天×12MB+结果12MB≈96MB，Set方案需5.6GB。Bitmap仅为Set的1.7%。注意用户ID不连续时可能有空位浪费。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

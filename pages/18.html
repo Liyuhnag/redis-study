@@ -186,10 +186,105 @@ Max latency so far: 9871 microseconds.</code></pre>
 <p>当然，要真正把Redis用好，除了要了解Redis本身的原理，还要了解和Redis交互的各底层系统的关键机制，包括操作系统和文件系统。通常情况下，一些难以排查的问题是Redis的用法或设置和底层系统的工作机制不协调导致的。下节课，我会着重给你介绍文件系统、操作系统对Redis性能的影响，以及相应的排查方法和解决方案。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">Redis 变慢排查：操作系统与持久化因素</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node red" style="padding:12px 24px">Redis 延迟波动</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>检查持久化</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">AOF</div>
+          <div class="flow-node orange">always 策略阻塞<br><small style="font-weight:400;font-size:0.75rem">appendfsync everysec<br>no-appendfsync-on-rewrite yes</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">RDB</div>
+          <div class="flow-node orange">fork 耗时<br><small style="font-weight:400;font-size:0.75rem">内存越大 fork 越慢<br>监控 latest_fork_usec</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>检查内存</span></div><div class="flow-node purple">swap 使用 / 内存大页<br><small style="font-weight:400;font-size:0.75rem">echo never > /sys/kernel/mm/transparent_hugepage/enabled</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>检查系统</span></div><div class="flow-node blue">文件描述符 / 网络配置<br><small style="font-weight:400;font-size:0.75rem">ulimit 设置 / 内核参数优化</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">系统化清单逐项排查<br><small style="font-weight:400;font-size:0.75rem">建立基线 → 慢日志 → 持久化 → 内存 → OS</small></div></div></div>
+  </div>
+  <div class="flow-caption">按清单逐项排查操作系统和持久化配置对 Redis 性能的影响</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何判断Redis是否变慢了？有什么基准测试方法？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">判断方法：<b>1.</b>使用redis-cli --latency/-latency-history监控延迟；<b>2.</b>使用redis-benchmark基准测试获取正常延迟基线；<b>3.</b>对比当前延迟是否超过基线的2倍以上。基准测试时用redis-benchmark -t get,set等测试基本操作，在目标服务器上执行以排除网络因素。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">慢查询日志（slowlog）如何配置和使用？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">配置：<b>slowlog-log-slower-than</b>设置阈值（微秒，默认10000即10ms）；<b>slowlog-max-len</b>设置日志最大条目数。使用：SLOWLOG GET [N]获取最近N条慢查询；SLOWLOG LEN查看条目数；SLOWLOG RESET清空。分析慢查询找出耗时命令并优化。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">哪些Redis操作复杂度高容易导致延迟增加？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">高复杂度操作：<b>KEYS *</b>（O(N)遍历全量key）、<b>SORT</b>（O(N+NlogN)）、大集合操作（HGETALL/SMEMBERS/LRANGE 0 -1）、集合运算（SUNION/SINTER/SDIFF）、SUBSCRIBE大量通道。另外：<b>大key操作</b>（读写大value）和<b>DEL大key</b>（同步释放内存）。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">内存不足时Redis变慢的原因和排查方法？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">原因：内存超过maxmemory触发<b>淘汰策略</b>，每次写入前需要先淘汰key释放空间，淘汰操作在主线程执行导致阻塞。排查：INFO memory查看used_memory和maxmemory；检查evicted_keys是否持续增加；检查内存碎片率mem_fragmentation_ratio。解决：增加内存、优化数据结构、清理不必要数据。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">AOF的appendfsync配置对Redis延迟有什么影响？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>always</b>：每次写操作都fsync，延迟显著增加（ms级磁盘IO）。<b>everysec</b>：后台线程每秒fsync，正常情况不影响主线程。但如果上一次fsync还未完成，主线程会被<b>阻塞等待</b>（避免丢失过多数据）。<b>no</b>：不主动fsync，延迟最低。磁盘IO能力差时everysec也可能导致阻塞。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

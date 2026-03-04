@@ -76,6 +76,28 @@
 </p>
 <p>然后，哨兵2、3可以和哨兵1建立网络连接。通过这个方式，哨兵2和3也可以建立网络连接，这样一来，哨兵集群就形成了。它们相互间可以通过网络连接进行通信，比如说对主库有没有下线这件事儿进行判断和协商。
 </p>
+
+<div class="flow-diagram">
+  <div class="flow-title">哨兵集群 pub/sub 自动发现与 Leader 选举流程</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">哨兵1</div>
+          <div class="flow-node blue">连接主库</div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">哨兵2</div>
+          <div class="flow-node blue">连接主库</div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">哨兵3</div>
+          <div class="flow-node blue">连接主库</div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>pub/sub</span></div><div class="flow-node purple">在 __sentinel__:hello 频道<br><small style="font-weight:400;font-size:0.75rem">各哨兵发布自己的 IP + 端口，订阅他人信息</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>互相发现</span></div><div class="flow-node orange">哨兵两两建立命令连接<br><small style="font-weight:400;font-size:0.75rem">形成哨兵集群</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>INFO 命令</span></div><div class="flow-node teal">向主库发送 INFO → 获取从库列表<br><small style="font-weight:400;font-size:0.75rem">与每个从库建立监控连接</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>主库故障</span></div><div class="flow-node red">主观下线 → 询问其他哨兵 → 客观下线</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>投票选举</span></div><div class="flow-node green">Leader 选举（先到先得，半数以上票）<br><small style="font-weight:400;font-size:0.75rem">Leader 执行主从切换并通知客户端</small></div></div></div>
+  </div>
+  <div class="flow-caption">哨兵通过 pub/sub 自动组建集群，通过投票选出 Leader 执行故障切换</div>
+</div>
+
 <img src="https://static001.geekbang.org/resource/image/ca/b1/ca42698128aa4c8a374efbc575ea22b1.jpg?wh=2822%2A1535" alt="" style="max-width:100%;border-radius:8px;margin:16px 0;">
 </p>
 <p>哨兵除了彼此之间建立起连接形成集群外，还需要和从库建立连接。这是因为，在哨兵的监控任务中，它需要对主从库都进行心跳判断，而且在主从库切换完成后，它还需要通知从库，让它们和新主库进行同步。
@@ -164,10 +186,87 @@
 <p><strong>经验分享：</strong><strong>要保证所有哨兵实例的配置是一致的，尤其是主观下线的判断值down-after-milliseconds</strong>。我们曾经就踩过一个“坑”。当时，在我们的项目中，因为这个值在不同的哨兵实例上配置不一致，导致哨兵集群一直没有对有故障的主库形成共识，也就没有及时切换主库，最终的结果就是集群服务不稳定。所以，你一定不要忽略这条看似简单的经验。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">哨兵集群如何自动组建？哨兵之间怎么互相发现？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">通过Redis的<b>Pub/Sub机制</b>：每个哨兵连接到主库，在__sentinel__:hello频道发布自己的信息；其他哨兵订阅同一频道获知新哨兵存在；之后建立直接命令连接。发现从库则通过向主库发送<b>INFO命令</b>获取列表。部署时只需配置主库地址即可。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">哨兵Leader选举使用什么算法？流程如何？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">使用<b>Raft算法</b>简化版：某哨兵判定主库客观下线后向其他哨兵请求投票；每个哨兵在一个epoch中只投一票（先到先得）；获得<b>超过半数(N/2+1)</b>投票则成为Leader执行故障转移。无人获多数票则随机超时后重新选举。这就是为什么哨兵数量建议奇数。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">为什么哨兵集群至少需要3个？2个有什么问题？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">2个哨兵时多数票需要2票，一个挂了剩下的永远无法凑齐多数票，无法完成Leader选举和故障转移。3个哨兵多数票需2票，挂1个仍可工作。通用公式：N个哨兵最多容忍(N-1)/2个故障。生产环境推荐3或5个。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">quorum和majority有什么区别？分别用在哪？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>quorum</b>用于<b>客观下线判定</b>：达到quorum个哨兵确认则判定客观下线，可由用户配置。<b>majority</b>用于<b>Leader选举</b>：需获得N/2+1票才能当选，固定不可配。quorum可以小于majority，即少数哨兵可触发选举但Leader仍需多数票。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">哨兵本身故障对系统有什么影响？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">单个哨兵故障（3个中挂1个）：监控和故障转移仍可工作但容错降低。超过半数哨兵故障：无法判定客观下线和选举Leader，失去自动故障转移能力（主从复制本身不受影响）。最佳实践：哨兵部署在不同物理机/可用区，监控哨兵存活，故障后及时恢复。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

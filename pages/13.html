@@ -151,6 +151,24 @@
 </p>
 <p>到这里，我们就知道了，GEO类型是把经纬度所在的区间编码作为Sorted Set中元素的权重分数，把和经纬度相关的车辆ID作为Sorted Set中元素本身的值保存下来，这样相邻经纬度的查询就可以通过编码值的大小范围查询来实现了。接下来，我们再来聊聊具体如何操作GEO类型。
 </p>
+
+<div class="flow-diagram">
+  <div class="flow-title">GeoHash 编码与 Sorted Set 存储原理</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">输入经纬度 (116.37, 39.86)</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>二分区间编码</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">经度编码</div>
+          <div class="flow-node orange">[-180,180] 递归二分<br><small style="font-weight:400;font-size:0.75rem">116.37 → 11010</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">纬度编码</div>
+          <div class="flow-node orange">[-90,90] 递归二分<br><small style="font-weight:400;font-size:0.75rem">39.86 → 10111</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>交叉组合</span></div><div class="flow-node purple">偶数位放经度，奇数位放纬度<br><small style="font-weight:400;font-size:0.75rem">→ 1110011101（52位整数）</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>存入 Sorted Set</span></div><div class="flow-node green">member = 车辆ID / score = GeoHash值<br><small style="font-weight:400;font-size:0.75rem">相邻编码 ≈ 相邻地理位置</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>范围查询</span></div><div class="flow-node teal">GEORADIUS 搜索附近<br><small style="font-weight:400;font-size:0.75rem">查目标 + 周围 8 个网格，避免边界遗漏</small></div></div></div>
+  </div>
+  <div class="flow-caption">GeoHash 将二维经纬度映射为一维整数，利用 Sorted Set 范围查询实现「搜索附近」</div>
+</div>
+
 <h3 class="md-h3">如何操作GEO类型？</h3>
 <p>在使用GEO类型时，我们经常会用到两个命令，分别是GEOADD和GEORADIUS。
 </p>
@@ -289,10 +307,87 @@
 <p>GEO属于Redis提供的扩展数据类型。扩展数据类型有两种实现途径：一种是基于现有的数据类型，通过数据编码或是实现新的操作的方式，来实现扩展数据类型，例如基于Sorted Set和GeoHash编码实现GEO，以及基于String和位操作实现Bitmap；另一种就是开发自定义的数据类型，具体的操作是增加新数据类型的定义，实现创建和释放函数，实现新数据类型支持的命令操作，建议你尝试着把今天学到的内容灵活地应用到你的工作场景中。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis GEO底层用什么数据结构？为什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">底层使用<b>Sorted Set</b>：经纬度通过GeoHash算法编码为52位整数作为score，位置名称作为member。选择Sorted Set因为GeoHash将二维映射为一维且保持空间邻近性，Sorted Set的范围查询能力（ZRANGEBYSCORE）天然适合地理位置搜索。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">GeoHash算法的原理和局限性是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">原理：递归二分经纬度范围，左半区间记0右半区间记1，交替组合成整数，位数越多精度越高，编码相近的值地理位置也相近。局限性：<b>边界问题</b>（近距离点可能编码差异大）、精度与性能权衡、经度±180°附近编码突变。Redis通过搜索周围8个网格解决边界问题。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">GEORADIUS命令有什么性能隐患？如何优化？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">需遍历范围内所有元素并计算距离，千万级数据大半径查询耗时长。优化：按城市/区域分key减少单key元素数；用COUNT限制返回数量；控制查询半径；Redis 6.2+用GEOSEARCH替代；在从库查询避免阻塞主库。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis如何通过Module机制支持自定义数据类型？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Redis 4.0+的Module机制：用C语言编写模块，实现RedisModule_CreateDataType注册新类型，需实现rdb_save/rdb_load（持久化）、aof_rewrite（AOF重写）、free（内存释放）等回调。典型案例：RedisJSON、RedisTimeSeries、RedisGraph、RedisBloom。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">GEO相比直接用Sorted Set存经纬度有什么优势？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">直接用Sorted Set只能按一个维度排序，无法同时基于经纬度范围查询。GEO优势：GeoHash二维→一维映射保持空间邻近性；内置GEODIST距离计算；GEORADIUS高效范围查询O(logN+M)；自动检查相邻网格减少边界遗漏；GEOADD/GEOPOS等标准化接口简单易用。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

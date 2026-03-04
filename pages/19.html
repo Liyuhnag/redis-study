@@ -209,10 +209,105 @@ Swap: 0 kB</code></pre>
 <p>为了保证Redis高性能，我们需要给Redis充足的计算、内存和IO资源，给它提供一个“安静”的环境。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">Redis 内存碎片产生与清理流程</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">Redis 频繁修改/删除数据</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>内存分配</span></div><div class="flow-node orange">jemalloc 按固定规格分配<br><small style="font-weight:400;font-size:0.75rem">申请 20B → 分配 32B → 产生 12B 碎片</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>诊断</span></div><div class="flow-node purple">INFO memory → mem_fragmentation_ratio<br><small style="font-weight:400;font-size:0.75rem">&gt;1.5 需清理 | &lt;1.0 可能有 swap</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>清理方案</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">自动清理</div>
+          <div class="flow-node green">activedefrag yes<br><small style="font-weight:400;font-size:0.75rem">后台拷贝数据到连续空间<br>设置 CPU 使用上限</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">重启清理</div>
+          <div class="flow-node gray">重启实例<br><small style="font-weight:400;font-size:0.75rem">重新分配连续内存<br>需从 RDB/AOF 恢复</small></div>
+        </div>
+      </div></div></div>
+  </div>
+  <div class="flow-caption">定期监控碎片率，配合自动碎片清理功能保持内存健康</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">操作系统的Swap机制如何影响Redis性能？如何排查？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">当系统内存不足时OS将Redis内存页换到磁盘（Swap），访问这些页面需要磁盘IO，延迟从微秒级升到毫秒级。排查：cat /proc/{pid}/smaps查看Swap用量；free命令查看系统swap使用情况。解决：保证Redis有足够物理内存、设置vm.swappiness为较小值（如1-10）、避免过度使用内存。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">操作系统的透明大页(THP)为什么会影响Redis性能？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">THP将内存页从4KB变为2MB，bgsave/AOF重写fork后<b>COW粒度变大</b>：修改一个小key就要复制2MB页面（而非4KB），导致内存使用量暴增和COW耗时增加。建议：<b>关闭THP</b>（echo never > /sys/kernel/mm/transparent_hugepage/enabled），Redis启动时会检查并提醒。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">AOF重写期间为什么可能导致Redis变慢？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">AOF重写期间可能变慢的原因：<b>1.fork阻塞</b>（大内存实例页表拷贝耗时）；<b>2.COW内存压力</b>（写操作触发大量页面复制）；<b>3.磁盘IO竞争</b>（子进程写新AOF文件与主线程AOF fsync争夺磁盘IO）；<b>4.重写缓冲区</b>过大时主线程追加数据耗时。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">网络问题导致Redis变慢如何排查和优化？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">排查：检查网络延迟（ping/redis-cli --latency）、TCP连接数（ss/netstat）、网络带宽使用率、是否有丢包（netstat -s查看重传）。优化：使用Pipeline减少RTT次数；使用MGET/MSET批量操作；启用连接池复用连接；检查TCP参数（tcp_backlog、somaxconn）；避免大value占满带宽。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何系统性排查Redis变慢问题？排查步骤是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">排查步骤：<b>1.</b>确认基准延迟（redis-benchmark）；<b>2.</b>检查慢查询日志（SLOWLOG）；<b>3.</b>检查大key（redis-cli --bigkeys）；<b>4.</b>检查过期key集中删除（INFO stats的expired_keys）；<b>5.</b>检查AOF配置和磁盘IO；<b>6.</b>检查Swap使用；<b>7.</b>检查THP是否开启；<b>8.</b>检查网络延迟和连接数；<b>9.</b>检查内存碎片率。按影响从大到小排查。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

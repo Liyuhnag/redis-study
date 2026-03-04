@@ -187,10 +187,114 @@ mem_fragmentation_ratio:1.86</code></pre>
 <p>最后，我再给你提供一个小贴士：内存碎片自动清理涉及内存拷贝，这对Redis而言，是个潜在的风险。如果你在实践过程中遇到Redis性能变慢，记得通过日志看下是否正在进行碎片清理。如果Redis的确正在清理碎片，那么，我建议你调小active-defrag-cycle-max的值，以减轻对正常请求处理的影响。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">Redis 缓冲区类型与溢出风险</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">Redis 缓冲区</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">输入缓冲区</div>
+          <div class="flow-node orange">暂存客户端命令<br><small style="font-weight:400;font-size:0.75rem">上限 1GB 不可调<br>bigkey 命令可能撑满</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">输出缓冲区</div>
+          <div class="flow-node purple">暂存返回结果<br><small style="font-weight:400;font-size:0.75rem">client-output-buffer-limit<br>普通/从库/pub-sub 三类</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>溢出风险</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">从库复制</div>
+          <div class="flow-node red">全量同步 RDB + 命令积压<br><small style="font-weight:400;font-size:0.75rem">可能触发连接断开循环</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">Pub/Sub</div>
+          <div class="flow-node red">消费者慢导致积压<br><small style="font-weight:400;font-size:0.75rem">默认 8MB / 2MB 60s</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">监控 CLIENT LIST → 关注 qbuf / omem<br><small style="font-weight:400;font-size:0.75rem">合理设置 buffer 上限，避免 OOM</small></div></div></div>
+  </div>
+  <div class="flow-caption">理解缓冲区分类与上限设置，预防因缓冲区溢出导致的内存和连接问题</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">删除数据后Redis内存占用率还很高的原因是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">主要原因是<b>内存碎片</b>：Redis使用内存分配器（jemalloc），释放key后留下不连续的空闲内存块，这些碎片无法被新数据直接使用但仍占用物理内存。另外jemalloc按固定大小分配（8/16/32/...字节），实际分配往往大于请求大小，造成<b>内部碎片</b>。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何判断Redis的内存碎片率？多少算正常？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">使用<b>INFO memory</b>查看mem_fragmentation_ratio（= used_memory_rss / used_memory）。<b>1-1.5</b>：正常范围。<b>>1.5</b>：碎片率较高需要关注。<b>>2</b>：碎片严重需要处理。<b><1</b>：说明Redis使用了Swap，非常危险。注意刚启动时碎片率可能偏高属正常现象。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis内存碎片的产生原因有哪些？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>1.频繁修改</b>：value大小变化导致重新分配内存，原空间变为碎片。<b>2.删除操作</b>：删除key后留下空洞。<b>3.分配器特性</b>：jemalloc按固定大小类分配，如申请6字节分配8字节，浪费2字节（内部碎片）。<b>4.key大小不均匀</b>：大量不同大小的key加剧碎片化。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何清理Redis的内存碎片？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">方法：<b>1.重启Redis</b>：数据从RDB/AOF重新加载，内存重新紧凑分配。简单但有停机时间。<b>2.自动碎片整理</b>（Redis 4.0+）：配置activedefrag yes启用；active-defrag-ignore-bytes 100mb（碎片超过100MB才触发）；active-defrag-threshold-lower 10（碎片率>10%触发）。整理过程会占用CPU但不会长时间阻塞。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis 4.0+的自动碎片整理机制如何配置？有什么注意事项？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">配置：<b>activedefrag yes</b>开启；active-defrag-ignore-bytes和active-defrag-threshold-lower设置触发条件；<b>active-defrag-cycle-min/max</b>控制整理占用的CPU比例（如5%到25%）。注意：整理会消耗CPU影响请求处理；在低峰期更安全；某些jemalloc版本有bug需升级；监控延迟确保不影响业务。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

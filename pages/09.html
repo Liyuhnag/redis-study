@@ -35,6 +35,20 @@
             <div class="hero">
                 <h1>09 - 切片集群：数据增多了，是该加内存还是加实例？</h1>
                 <p class="subtitle">Redis核心技术与实战</p>
+            </div>
+            <div class="container">
+                <div class="article-content">
+
+<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-color:#86efac;margin-bottom:28px;">
+    <h3 style="color:#166534;font-size:1rem;margin-bottom:12px;">&#128204; 本讲核心要点</h3>
+    <ul style="list-style:none;padding:0;margin:0;">
+        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">1. 纵向扩展（加内存）vs 横向扩展（加实例），大数据量推荐横向扩展</li>
+        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">2. Redis Cluster 使用 16384 个哈希槽（slot）分配数据</li>
+        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">3. 哈希槽分配：CRC16(key) % 16384 → 对应实例</li>
+        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">4. 客户端通过 MOVED/ASK 重定向定位数据所在实例</li>
+        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">5. 集群支持在线数据迁移，重新分配 slot 不需要停服</li>
+    </ul>
+</div>
 
 <div class="flow-diagram">
   <div class="flow-title">Redis Cluster 哈希槽数据分片</div>
@@ -58,21 +72,6 @@
       </div></div></div>
   </div>
   <div class="flow-caption">16384个槽均匀映射到N个实例，扩缩容只需迁移部分槽</div>
-</div>
-
-            </div>
-            <div class="container">
-                <div class="article-content">
-
-<div class="card" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-color:#86efac;margin-bottom:28px;">
-    <h3 style="color:#166534;font-size:1rem;margin-bottom:12px;">&#128204; 本讲核心要点</h3>
-    <ul style="list-style:none;padding:0;margin:0;">
-        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">1. 纵向扩展（加内存）vs 横向扩展（加实例），大数据量推荐横向扩展</li>
-        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">2. Redis Cluster 使用 16384 个哈希槽（slot）分配数据</li>
-        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">3. 哈希槽分配：CRC16(key) % 16384 → 对应实例</li>
-        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">4. 客户端通过 MOVED/ASK 重定向定位数据所在实例</li>
-        <li style="padding:5px 0;color:#166534;font-size:0.9rem;border-bottom:1px dashed #bbf7d0;">5. 集群支持在线数据迁移，重新分配 slot 不需要停服</li>
-    </ul>
 </div>
 
                     <p>你好，我是蒋德钧。今天我们来学习切片集群。
@@ -207,7 +206,83 @@ redis-cli -h 172.16.19.5 –p 6379 cluster addslots 4</code></pre>
 <p>我刚刚说过，在Redis 3.0 之前，Redis官方并没有提供切片集群方案，但是，其实当时业界已经有了一些切片集群的方案，例如基于客户端分区的ShardedJedis，基于代理的Codis、Twemproxy等。这些方案的应用早于Redis Cluster方案，在支撑的集群实例规模、群稳定性、客户端友好性方面也都有着各自的优势，我会在后面的课程中，专门和你聊聊这些方案的实现机制，以及实践经验。这样一来，当你再碰到业务发展带来的数据量巨大的难题时，就可以根据这些方案的特点，选择合适的方案实现切片集群，以应对业务需求了。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">数据增大时纵向扩展和横向扩展各有什么优缺点？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>纵向扩展</b>：架构简单但硬件成本非线性增长、大内存fork慢、单机有上限。<b>横向扩展</b>：理论无限扩展、单实例内存可控，但需要数据分片策略、跨实例操作复杂、运维复杂度增加。Redis Cluster采用横向扩展，通过哈希槽分片实现。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis Cluster的哈希槽机制是什么？为什么是16384个槽？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">将数据空间划分为16384个槽，key通过CRC16对16384取模得到槽号，每个节点负责部分槽。选16384的原因：心跳包的槽位bitmap为2KB大小合适（65536则8KB太大），集群建议不超过1000节点时16384粒度足够，是通信开销和分片精度的平衡点。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">MOVED和ASK重定向有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>MOVED</b>：槽已<b>永久迁移</b>到目标节点，客户端应更新路由缓存。<b>ASK</b>：槽<b>正在迁移中</b>，仅本次请求重定向，不更新缓存，需先发ASKING命令。ASK出现在集群在线扩缩容（reshard）过程中。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis Cluster如何处理节点故障？和哨兵模式有什么异同？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">通过Gossip协议交换状态，多数master标记PFAIL则判定FAIL，下线节点的从库选举升级。与哨兵相同：主客观下线、多数投票、自动故障转移。不同：Cluster由数据节点自己检测（非独立进程）、使用Gossip通信、故障转移由master投票（非Leader集中处理）。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis Cluster在什么情况下整个集群不可用？如何避免？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">不可用情况：某个槽无可用节点（默认cluster-require-full-coverage yes时任一槽不可用导致整体不可用）、多数master不可用、集群脑裂。避免：每个master配1-2个从库、设置cluster-require-full-coverage no允许部分降级、主从部署不同机架、监控及时处理故障。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>

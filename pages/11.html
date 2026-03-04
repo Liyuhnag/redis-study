@@ -121,6 +121,28 @@ photo_obj_id: 3301000051</code></pre>
 </p>
 <p>为了帮助你理解int、embstr和raw这三种编码模式我画了一张示意图，如下所示：
 </p>
+
+<div class="flow-diagram">
+  <div class="flow-title">String 类型三种编码方式内存布局对比</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">保存数据到 String 类型</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>判断值类型</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">long 整数</div>
+          <div class="flow-node green">int 编码<br><small style="font-weight:400;font-size:0.75rem">ptr 直接存整数值<br>最省内存：16字节</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">字符串 ≤44B</div>
+          <div class="flow-node orange">embstr 编码<br><small style="font-weight:400;font-size:0.75rem">RedisObject + SDS 连续内存<br>一次分配，缓存友好</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">字符串 &gt;44B</div>
+          <div class="flow-node red">raw 编码<br><small style="font-weight:400;font-size:0.75rem">RedisObject 和 SDS 分开存储<br>两次内存分配</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-highlight">每个 key 还需 dictEntry（32B）+ RedisObject（16B）的元数据开销</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>优化方案</span></div><div class="flow-node teal">用 Hash 分桶 + ziplist 编码<br><small style="font-weight:400;font-size:0.75rem">共享 dictEntry，连续内存存储，节省 60%+ 内存</small></div></div></div>
+  </div>
+  <div class="flow-caption">Redis 根据值类型和大小自动选择最优编码，大量小键值对建议用 Hash 替代 String</div>
+</div>
+
 <img src="https://static001.geekbang.org/resource/image/ce/e3/ce83d1346c9642fdbbf5ffbe701bfbe3.jpg?wh=3072%2A1938" alt="" style="max-width:100%;border-radius:8px;margin:16px 0;">
 </p>
 <p>知道了RedisObject所包含的额外元数据开销，现在，我们就可以计算String类型的内存使用量了。
@@ -208,10 +230,87 @@ used_memory:1039136</code></pre>
 <p>最后，我还想再给你提供一个小方法：如果你想知道键值对采用不同类型保存时的内存开销，可以在<a href="http://www.redis.cn/redis_memory/" target="_blank" style="color:#4338ca">这个网址</a>里输入你的键值对长度和使用的数据类型，这样就能知道实际消耗的内存大小了。建议你把这个小工具用起来，它可以帮助你充分地节省内存。
 </p>
 
-                </div>
+                
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">为什么String存大量短数据内存效率低？浪费在哪里？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">每个String的key-value需要：dictEntry 24字节、RedisObject 16字节、SDS至少9字节头部、jemalloc内存对齐开销。存8字节key+8字节value实际消耗约70+字节，<b>内存利用率不到25%</b>。上亿小键值对时浪费极其可观。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Hash与String存储对象信息如何选择？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">String序列化JSON：读取方便但修改单字段需反序列化写回。每字段一个key：灵活但元数据开销巨大。<b>Hash</b>：可单独读写字段，底层ziplist时内存紧凑，减少key数量和元数据开销。适用场景：结构化对象、频繁读写单字段、大规模数据需节省内存。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">ziplist编码的特点和转换条件是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">ziplist是连续内存的紧凑结构。优点：内存利用率高、缓存友好。缺点：查找O(n)、可能连锁更新。Hash转换条件：元素超过hash-max-ziplist-entries（默认512）或元素大小超过hash-max-ziplist-value（默认64字节）时转为哈希表。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何用Hash分桶存储大量数据以节省内存？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">以1亿userID→data为例：取userID前5位作为Hash key，后2位作为field。每个桶控制在ziplist阈值内（如100个元素）。效果：1亿String key约7GB → 分桶Hash（ziplist编码）约1-2GB，<b>节省70%以上内存</b>。桶大小必须在hash-max-ziplist-entries以内。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">embstr、raw和int编码有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>int</b>（值为long范围整数）：直接在RedisObject的ptr存储，最省内存。<b>embstr</b>（≤44字节字符串）：RedisObject和SDS在同一块连续内存，一次分配，只读。<b>raw</b>（>44字节）：分开分配，两次内存操作。Redis根据值类型和大小自动选择最优编码。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

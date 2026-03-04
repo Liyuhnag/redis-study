@@ -226,10 +226,109 @@
 <p>最后，我再给你提供一个Codis使用上的小建议：当你有多条业务线要使用Codis时，可以启动多个codis dashboard，每个dashboard管理一部分codis server，同时，再用一个dashboard对应负责一个业务线的集群管理，这样，就可以做到用一个Codis集群实现多条业务线的隔离管理了。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">Redis Codis 集群架构</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">客户端请求</div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node purple">Codis Proxy（代理层）<br><small style="font-weight:400;font-size:0.75rem">计算 CRC32(key) % 1024 → 槽位<br>转发请求到对应 Server Group</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>路由转发</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">Group 1</div>
+          <div class="flow-node green">主 + 从<br><small style="font-weight:400;font-size:0.75rem">槽 0~341</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">Group 2</div>
+          <div class="flow-node orange">主 + 从<br><small style="font-weight:400;font-size:0.75rem">槽 342~682</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">Group 3</div>
+          <div class="flow-node teal">主 + 从<br><small style="font-weight:400;font-size:0.75rem">槽 683~1023</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>集群管理</span></div><div class="flow-node gray">Codis Dashboard + ZooKeeper/etcd<br><small style="font-weight:400;font-size:0.75rem">管理槽位映射、数据迁移、Proxy 注册</small></div></div></div>
+  </div>
+  <div class="flow-caption">Codis 通过 Proxy 层代理请求，对客户端透明，支持平滑扩容</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Codis和Redis Cluster的架构有什么本质区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;"><b>Codis</b>：基于<b>代理（Proxy）</b>的中心化架构。客户端连接代理，代理负责请求路由和数据分片。需要额外组件：Codis Proxy + Codis Dashboard + ZooKeeper/etcd。<b>Redis Cluster</b>：<b>去中心化</b>架构。客户端直连数据节点，节点间通过Gossip协议交换状态，客户端缓存路由表自行路由。无额外组件。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Codis的数据迁移如何做到平滑？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Codis使用<b>1024个slot</b>分片（vs Redis Cluster的16384）。迁移过程：<b>1.</b>标记slot为迁移中；<b>2.</b>迁移期间访问该slot的key时，Proxy先检查key在源还是目标；<b>3.</b>如果在源则<b>先迁移该key到目标</b>再处理请求；<b>4.</b>后台持续迁移剩余key。对客户端完全透明，不影响正常读写，实现<b>在线无感迁移</b>。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">选择Codis还是Redis Cluster应该考虑哪些因素？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">选Codis：<b>1.</b>存量系统使用Twemproxy需平滑迁移；<b>2.</b>需要Dashboard可视化管理；<b>3.</b>需要对客户端完全透明（不改代码）。选Redis Cluster：<b>1.</b>新项目优先（官方原生支持）；<b>2.</b>不想维护额外组件；<b>3.</b>需要更大的slot数量（16384）细粒度分片；<b>4.</b>社区支持和版本跟进更好。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Codis不支持Redis的哪些功能？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">Codis限制：<b>1.</b>不支持事务（MULTI/EXEC）——key可能分布在不同实例。<b>2.</b>不支持跨slot的多key操作（MGET涉及不同slot的key需要分发到多个实例）。<b>3.</b>不支持Pub/Sub的跨节点消息（需要改造）。<b>4.</b>不支持rename-command。<b>5.</b>部分命令需要指定key才能正确路由。这些限制Redis Cluster也部分存在。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">集群方案中跨slot操作的问题如何解决？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">方法：<b>1.HashTag</b>：用{tag}包裹key的一部分，保证相关key分到同一slot（如user:{1001}:name和user:{1001}:age）。<b>2.客户端聚合</b>：拆分多key操作到不同实例并行执行，客户端合并结果。<b>3.Lua脚本</b>：保证脚本中的所有key在同一slot。<b>4.业务设计</b>：避免需要跨slot操作的数据模型。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

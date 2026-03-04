@@ -285,10 +285,118 @@ void worker(int bind_cpu){
 Redis的低延迟是我们永恒的追求目标，而多核CPU和NUMA架构已经成为了目前服务器的主流配置，所以，希望你能掌握绑核优化方案，并把它应用到实践中。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">Redis CPU 性能瓶颈排查与优化流程</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node red" style="padding:12px 24px">Redis 响应变慢</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>排查方向</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">非 Redis 原因</div>
+          <div class="flow-node gray">网络延迟 / 系统负载<br><small style="font-weight:400;font-size:0.75rem">基线测量：redis-cli --intrinsic-latency</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">Redis 原因</div>
+          <div class="flow-node orange">慢查询 / 大 Key<br><small style="font-weight:400;font-size:0.75rem">SLOWLOG GET 分析</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>常见原因</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">复杂度高</div>
+          <div class="flow-node purple">O(N) 命令<br><small style="font-weight:400;font-size:0.75rem">KEYS/SORT/聚合操作</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">持久化</div>
+          <div class="flow-node blue">fork 阻塞<br><small style="font-weight:400;font-size:0.75rem">AOF 刷盘 / RDB 生成</small></div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">内存</div>
+          <div class="flow-node teal">swap / 大页<br><small style="font-weight:400;font-size:0.75rem">碎片清理开销</small></div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">优化策略<br><small style="font-weight:400;font-size:0.75rem">避免 O(N) 命令 | 绑定 CPU | no-appendfsync-on-rewrite | 关闭大页</small></div></div></div>
+  </div>
+  <div class="flow-caption">按「基线 → 排查 → 定位 → 优化」四步法系统化解决 Redis 延迟问题</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">CPU的NUMA架构如何影响Redis性能？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">NUMA架构下每个CPU有本地内存，访问远端内存延迟更高。如果Redis进程在不同CPU间迁移，可能频繁访问远端内存导致性能下降。或者Redis主线程和子进程（bgsave）被调度到同一CPU核心导致争抢。应将Redis<b>绑定到特定CPU</b>避免跨NUMA访问。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">如何将Redis绑定到特定CPU核心？有什么注意事项？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">使用taskset命令或Redis配置server_cpulist绑核。注意事项：<b>不要将主线程和子进程绑到同一核心</b>（bgsave时会争抢CPU）；可以设置不同的CPU列表给主线程、子进程和IO线程；绑核前确认CPU拓扑结构（lscpu命令），确保绑定到同一NUMA节点的核心。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis的网络中断处理如何影响性能？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">网络中断（软中断）默认可能集中在一个CPU核心处理，如果该核心也运行Redis主线程，会导致CPU争用影响性能。优化：使用<b>irqbalance</b>均衡分配中断或手动设置中断亲和性（/proc/irq/N/smp_affinity），将网络中断分配到非Redis核心上。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">多核CPU环境下如何规划Redis实例部署？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">建议：每个CPU核心运行一个Redis实例（使用Redis Cluster）；主线程绑定一个核心，后台线程（lazyfree、AOF fsync）分配到其他核心；避免实例间共享CPU核心；在同一NUMA节点内分配实例和其内存；监控CPU使用率避免过载。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">上下文切换对Redis性能有什么影响？如何减少？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">上下文切换包括线程/进程切换时保存和恢复CPU寄存器、程序计数器等状态，涉及缓存失效，每次约几微秒但频繁切换影响显著。减少方法：Redis使用<b>单线程</b>避免线程切换；绑核减少进程迁移；减少不必要的后台任务；控制连接数避免频繁事件处理。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>

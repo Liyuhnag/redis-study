@@ -227,10 +227,122 @@ OK
 有了上面这些应对方法我相信你在实际应用时，就可以避免缓冲区溢出带来的命令数据丢失、Redis崩溃的这些“惨案”了。
 </p>
 
-                </div>
+                
+
+<div class="flow-diagram">
+  <div class="flow-title">Redis 6.0 多线程网络 IO 模型</div>
+  <div class="flow-body">
+    <div class="flow-steps"><div class="flow-step-item"><div class="flow-node blue" style="padding:12px 24px">客户端请求到达</div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>IO 多线程</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">IO 线程1</div>
+          <div class="flow-node purple">读取解析请求</div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">IO 线程2</div>
+          <div class="flow-node purple">读取解析请求</div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">IO 线程N</div>
+          <div class="flow-node purple">读取解析请求</div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>仍然单线程</span></div><div class="flow-node orange">主线程执行命令操作<br><small style="font-weight:400;font-size:0.75rem">保证原子性，无锁竞争</small></div></div><div class="flow-step-item"><div class="flow-arrow">↓ <span>IO 多线程</span></div><div class="flow-parallel">
+        <div class="flow-branch">
+          <div class="flow-branch-label">IO 线程1</div>
+          <div class="flow-node teal">写回响应</div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">IO 线程2</div>
+          <div class="flow-node teal">写回响应</div>
+        </div>
+        <div class="flow-branch">
+          <div class="flow-branch-label">IO 线程N</div>
+          <div class="flow-node teal">写回响应</div>
+        </div>
+      </div></div><div class="flow-step-item"><div class="flow-arrow">↓</div><div class="flow-node green">网络 IO 并行 + 命令执行串行<br><small style="font-weight:400;font-size:0.75rem">io-threads 4~6 | io-threads-do-reads yes</small></div></div></div>
+  </div>
+  <div class="flow-caption">Redis 6.0 多线程仅用于网络 IO 读写，命令执行仍然单线程保证安全</div>
+</div>
+
+<div class="interview-section" style="margin-top:36px;margin-bottom:20px;">
+  <hr style="border:none;border-top:2px dashed #c7d2fe;margin:32px 0;">
+  <div style="background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #a5b4fc;border-radius:12px;padding:24px;margin-top:0;">
+    <h2 style="color:#3730a3;font-size:1.3rem;margin:0 0 6px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.4rem;">&#128188;</span> 面试准备
+    </h2>
+    <p style="color:#6366f1;font-size:0.85rem;margin:0 0 20px 0;">以下5道题目覆盖本讲核心知识点，点击题目展开参考答案</p>
+    
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q1</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">Redis中有哪些缓冲区？它们各自的作用是什么？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">主要缓冲区：<b>客户端输入缓冲区</b>（暂存客户端发来的命令，每个连接一个，最大1GB）；<b>客户端输出缓冲区</b>（暂存返回给客户端的结果）；<b>复制缓冲区(replication buffer)</b>（全量复制时暂存主库新写命令）；<b>复制积压缓冲区(repl_backlog)</b>（环形缓冲区支持增量复制）。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q2</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">客户端输入缓冲区溢出会导致什么问题？如何避免？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">输入缓冲区最大<b>1GB且不可配置</b>，溢出时Redis直接关闭该客户端连接。原因：客户端发送大量大命令或大key写入；pipeline堆积过多命令。避免：避免写入超大value；控制pipeline中命令数量；使用CLIENT LIST监控qbuf和qbuf-free；设计合理的数据结构避免大key。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q3</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">客户端输出缓冲区的普通客户端和订阅客户端有什么区别？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">通过client-output-buffer-limit分别配置：<b>普通客户端(normal)</b>默认无限制（0 0 0），但大量数据输出可能导致内存飙升。<b>订阅客户端(pubsub)</b>默认32mb 8mb 60（超32MB立即断开，超8MB持续60秒断开）。<b>从库客户端(slave)</b>默认256mb 64mb 60。订阅客户端限制更严因为消息堆积风险更大。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q4</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">复制缓冲区溢出会导致什么后果？如何避免？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">replication buffer溢出导致主从连接断开，从库需要<b>重新全量复制</b>，而全量复制又会继续生成新数据到缓冲区，可能陷入<b>复制风暴</b>。避免：增大client-output-buffer-limit slave配置；控制主库写入量；避免大key操作产生大量复制数据；监控从库复制延迟。</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+      <div style="background:#f0f4ff;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').textContent=this.nextElementSibling.style.display==='none'?'&#9654;':'&#9660;'">
+        <span style="background:#4338ca;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">Q5</span>
+        <span style="color:#1e293b;font-size:0.93rem;font-weight:600;flex:1;">repl_backlog_buffer设置过小会有什么影响？如何合理配置？</span>
+        <span class="arrow" style="color:#4338ca;font-size:0.8rem;">&#9654;</span>
+      </div>
+      <div style="display:none;padding:14px 16px;background:white;border-top:1px solid #e2e8f0;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="background:#dc2626;color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;flex-shrink:0;">A</span>
+          <div style="color:#475569;font-size:0.9rem;line-height:1.7;">过小导致从库断连后<b>无法增量复制</b>（需要的数据已被覆盖），必须全量复制增加主库压力。配置公式：<b>repl-backlog-size = 每秒写入量 × 预计最大断连秒数 × 2</b>（2倍余量）。例如每秒写入2MB、预计最大断开30秒，则设置120MB以上。默认1MB通常太小，生产建议至少64MB-256MB。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
                 <nav class="page-nav" id="pageNav"></nav>
             </div>
         </main>
     </div>
     <script src="../assets/nav.js"></script>
+    <script src="../assets/flow-control.js"></script>
 </body></html>
